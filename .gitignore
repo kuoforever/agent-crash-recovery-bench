@@ -8,5 +8,6 @@ _bench/
 _eval/
 _llm/
 _smoke/
+_dify_bench/
 *.sqlite
 sink.log

@@ -1,0 +1,98 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-08-04",
+  "evidence_kind": "curated_summary",
+  "raw_snapshot": "evidence/dify-raw-snapshot.json",
+  "environment": {
+    "dify_version": "1.16.1",
+    "deployment": "Docker Compose in WSL Ubuntu",
+    "entrypoint": "http://localhost:8088",
+    "effect_sink": "guarded_loop.dify_sink"
+  },
+  "apps": {
+    "http_no_retry": "d2cd725c-78e3-4669-b7d7-6bc0273856c8",
+    "http_retry_3": "38c669d6-7e99-4789-b77e-7f944502e6b3",
+    "hitl_before_effect": "d52db1de-15b2-42d6-8d5f-85d047ee84b2"
+  },
+  "cases": [
+    {
+      "name": "http_500_without_retry",
+      "input_key": "no-retry-500-002",
+      "workflow_run_id": "37f12716-e290-417b-b702-a3153d00e33f",
+      "dify_status": "succeeded",
+      "total_steps": 3,
+      "returned_status_code": 500,
+      "effect_attempts": [1],
+      "observation": "With retry and error handling disabled, the HTTP node exposed status 500 as normal output and the workflow succeeded."
+    },
+    {
+      "name": "http_500_with_three_retries",
+      "input_key": "retry-500-001",
+      "workflow_run_id": "0c8db02e-d43c-4a3c-a27f-6e3062aa7d43",
+      "dify_status": "failed",
+      "total_steps": 5,
+      "error": "Request failed with status code 500",
+      "effect_attempts": [1, 2, 3, 4],
+      "observation": "The initial request plus three whole-node retries applied the side effect four times."
+    },
+    {
+      "name": "human_input_resume_after_api_restart",
+      "input_key": "hitl-002",
+      "workflow_run_id": "05c7a291-6a1b-439a-9ec7-0e445f8acafb",
+      "human_input_form_id": "019fcc3d-6477-71d8-99c0-e3fd8ecfca77",
+      "before_restart": {
+        "evidence_class": "operator_observed_not_independently_archived",
+        "dify_status": "paused",
+        "total_steps": 2,
+        "effect_attempts": []
+      },
+      "after_approve": {
+        "form_status": "submitted",
+        "action": "approve",
+        "effect_attempts": [1],
+        "dify_status": "stopped",
+        "total_steps": 4,
+        "error": "Aborted: Client response stream closed before app execution completed"
+      },
+      "observation": "The persisted form survived an API-container restart and resumed the graph, but the original debugger response stream did not reconnect."
+    },
+    {
+      "name": "api_kill_is_not_executor_kill",
+      "input_key": "crash-mid-node-001",
+      "workflow_run_id": "d100a649-ea4c-49f3-bd29-cd036b2ee685",
+      "killed_container": "docker-api-1",
+      "dify_status": "succeeded",
+      "total_steps": 3,
+      "effect_attempts": [1],
+      "observation": "Execution continued in the worker. Restarting the blocked sink produced an HTTP 502, which the no-retry/no-error-strategy workflow still treated as success."
+    },
+    {
+      "name": "worker_kill_after_effect_before_http_response",
+      "input_key": "crash-worker-001",
+      "workflow_run_id": "c326e948-e8e8-411d-a588-53ecd3ae81dc",
+      "killed_container": "docker-worker-1",
+      "kill_exit_code": 137,
+      "kill_evidence": "evidence/dify-raw-snapshot.json#fault_injection_transcript",
+      "effect_attempts": [1],
+      "observed_after_restart": {
+        "observed_at": "2026-08-04T10:29:24.785923+00:00",
+        "observation_window_seconds": 864.312677,
+        "dify_status": "running",
+        "total_steps": 0,
+        "node_statuses": {
+          "start": "succeeded",
+          "effect": "running"
+        },
+        "automatic_redelivery_observed": false
+      },
+      "observation": "In this Dify 1.16.1 debugger run, a hard worker crash did not duplicate the side effect in the bounded observation window, but it also did not recover the run; the database snapshot still showed running."
+    }
+  ],
+  "runtime_notes": [
+    "The workflows were run as unpublished debugger drafts.",
+    "The sink fsyncs each event before replying and can block after apply to create a deterministic crash window.",
+    "This file is a curated summary; exact event and database rows are preserved in evidence/dify-raw-snapshot.json.",
+    "The worker-crash result is a bounded single-run observation, not a proof that no delayed recovery can ever occur.",
+    "The local HITL draft required replacing an invalid delivery-method id with a UUID in the Dify draft workflow row."
+  ]
+}

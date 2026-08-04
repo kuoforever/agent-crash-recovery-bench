@@ -1,0 +1,154 @@
+{
+  "schema_version": 1,
+  "captured_at_local": "2026-08-04T18:29:24.7584240+08:00",
+  "captured_at_database": "2026-08-04T10:29:24.785923+00:00",
+  "provenance": {
+    "events": "Exact parsed records from ignored runtime file _dify_bench/sink/events.jsonl.",
+    "workflow_runs": "Read-only PostgreSQL snapshot of the five selected workflow_runs rows.",
+    "workflow_node_executions": "Read-only PostgreSQL snapshot of node rows for the same run ids.",
+    "human_input_form": "Read-only PostgreSQL snapshot limited to non-secret form status fields.",
+    "run_io": "Read-only PostgreSQL inputs/outputs reduced to experiment fields; sys.user_id and verbose proxy HTML were omitted.",
+    "fault_injection_transcript": "Verbatim status lines retained from the operator terminal transcript; the exact kill timestamp was not archived.",
+    "container_log_excerpts": "API and worker startup lines copied from their Docker logs."
+  },
+  "events": [
+    {"key": "no-retry-500-002", "token": "no-retry-500-002", "attempt": 1, "applied_at": 1785837801.4771376, "pid": 1},
+    {"key": "retry-500-001", "token": "retry-500-001", "attempt": 1, "applied_at": 1785837853.229833, "pid": 1},
+    {"key": "retry-500-001", "token": "retry-500-001", "attempt": 2, "applied_at": 1785837853.3606505, "pid": 1},
+    {"key": "retry-500-001", "token": "retry-500-001", "attempt": 3, "applied_at": 1785837853.489997, "pid": 1},
+    {"key": "retry-500-001", "token": "retry-500-001", "attempt": 4, "applied_at": 1785837853.6192992, "pid": 1},
+    {"key": "hitl-002", "token": "hitl-002", "attempt": 1, "applied_at": 1785838158.6459775, "pid": 1},
+    {"key": "crash-mid-node-001", "token": "crash-mid-node-001", "attempt": 1, "applied_at": 1785838235.6780076, "pid": 1},
+    {"key": "crash-worker-001", "token": "crash-worker-001", "attempt": 1, "applied_at": 1785838500.507635, "pid": 1}
+  ],
+  "workflow_runs": [
+    {"id": "37f12716-e290-417b-b702-a3153d00e33f", "status": "succeeded", "total_steps": 3, "error": null, "created_at": "2026-08-04T10:03:21.460457", "finished_at": "2026-08-04T10:03:21.536955"},
+    {"id": "0c8db02e-d43c-4a3c-a27f-6e3062aa7d43", "status": "failed", "total_steps": 5, "error": "Request failed with status code 500", "created_at": "2026-08-04T10:04:13.209476", "finished_at": "2026-08-04T10:04:13.646079"},
+    {"id": "05c7a291-6a1b-439a-9ec7-0e445f8acafb", "status": "stopped", "total_steps": 4, "error": "Aborted: Client response stream closed before app execution completed", "created_at": "2026-08-04T10:06:43.300478", "finished_at": "2026-08-04T10:09:18.655506"},
+    {"id": "d100a649-ea4c-49f3-bd29-cd036b2ee685", "status": "succeeded", "total_steps": 3, "error": null, "created_at": "2026-08-04T10:10:35.651062", "finished_at": "2026-08-04T10:10:59.796113"},
+    {"id": "c326e948-e8e8-411d-a588-53ecd3ae81dc", "status": "running", "total_steps": 0, "error": null, "created_at": "2026-08-04T10:15:00.473246", "finished_at": null}
+  ],
+  "workflow_node_executions": [
+    {"workflow_run_id": "37f12716-e290-417b-b702-a3153d00e33f", "node_id": "start", "node_type": "start", "status": "succeeded", "elapsed_time": 0.000096, "error": null, "created_at": "2026-08-04T10:03:21.465144", "finished_at": "2026-08-04T10:03:21.465240"},
+    {"workflow_run_id": "37f12716-e290-417b-b702-a3153d00e33f", "node_id": "effect", "node_type": "http-request", "status": "succeeded", "elapsed_time": 0.021180, "error": null, "created_at": "2026-08-04T10:03:21.469812", "finished_at": "2026-08-04T10:03:21.490992"},
+    {"workflow_run_id": "37f12716-e290-417b-b702-a3153d00e33f", "node_id": "end", "node_type": "end", "status": "succeeded", "elapsed_time": 0.000224, "error": null, "created_at": "2026-08-04T10:03:21.493583", "finished_at": "2026-08-04T10:03:21.493807"},
+    {"workflow_run_id": "0c8db02e-d43c-4a3c-a27f-6e3062aa7d43", "node_id": "start", "node_type": "start", "status": "succeeded", "elapsed_time": 0.000093, "error": null, "created_at": "2026-08-04T10:04:13.216811", "finished_at": "2026-08-04T10:04:13.216904"},
+    {"workflow_run_id": "0c8db02e-d43c-4a3c-a27f-6e3062aa7d43", "node_id": "effect", "node_type": "http-request", "status": "failed", "elapsed_time": 0.407193, "error": "Request failed with status code 500", "created_at": "2026-08-04T10:04:13.223091", "finished_at": "2026-08-04T10:04:13.630284"},
+    {"workflow_run_id": "05c7a291-6a1b-439a-9ec7-0e445f8acafb", "node_id": "start", "node_type": "start", "status": "succeeded", "elapsed_time": 0.000096, "error": null, "created_at": "2026-08-04T10:06:43.307288", "finished_at": "2026-08-04T10:06:43.307384"},
+    {"workflow_run_id": "05c7a291-6a1b-439a-9ec7-0e445f8acafb", "node_id": "approval", "node_type": "human-input", "status": "succeeded", "elapsed_time": 0.006074, "error": null, "created_at": "2026-08-04T10:09:18.620141", "finished_at": "2026-08-04T10:09:18.626215"},
+    {"workflow_run_id": "05c7a291-6a1b-439a-9ec7-0e445f8acafb", "node_id": "effect", "node_type": "http-request", "status": "failed", "elapsed_time": 0.013663, "error": "Aborted: Client response stream closed before app execution completed", "created_at": "2026-08-04T10:09:18.641860", "finished_at": "2026-08-04T10:09:18.655523"},
+    {"workflow_run_id": "d100a649-ea4c-49f3-bd29-cd036b2ee685", "node_id": "start", "node_type": "start", "status": "succeeded", "elapsed_time": 0.000088, "error": null, "created_at": "2026-08-04T10:10:35.656487", "finished_at": "2026-08-04T10:10:35.656575"},
+    {"workflow_run_id": "d100a649-ea4c-49f3-bd29-cd036b2ee685", "node_id": "effect", "node_type": "http-request", "status": "succeeded", "elapsed_time": 24.091776, "error": null, "created_at": "2026-08-04T10:10:35.665426", "finished_at": "2026-08-04T10:10:59.757202"},
+    {"workflow_run_id": "d100a649-ea4c-49f3-bd29-cd036b2ee685", "node_id": "end", "node_type": "end", "status": "succeeded", "elapsed_time": 0.000063, "error": null, "created_at": "2026-08-04T10:10:59.758271", "finished_at": "2026-08-04T10:10:59.758334"},
+    {"workflow_run_id": "c326e948-e8e8-411d-a588-53ecd3ae81dc", "node_id": "start", "node_type": "start", "status": "succeeded", "elapsed_time": 0.000107, "error": null, "created_at": "2026-08-04T10:15:00.490165", "finished_at": "2026-08-04T10:15:00.490272"},
+    {"workflow_run_id": "c326e948-e8e8-411d-a588-53ecd3ae81dc", "node_id": "effect", "node_type": "http-request", "status": "running", "elapsed_time": 0.0, "error": null, "created_at": "2026-08-04T10:15:00.498494", "finished_at": null}
+  ],
+  "human_input_form": {
+    "id": "019fcc3d-6477-71d8-99c0-e3fd8ecfca77",
+    "workflow_run_id": "05c7a291-6a1b-439a-9ec7-0e445f8acafb",
+    "node_id": "approval",
+    "status": "submitted",
+    "selected_action_id": "approve",
+    "created_at": "2026-08-04T10:06:43.319703",
+    "submitted_at": "2026-08-04T10:09:18.537684",
+    "expiration_time": "2026-08-07T10:06:43.319703"
+  },
+  "sanitized_run_io": [
+    {
+      "workflow_run_id": "37f12716-e290-417b-b702-a3153d00e33f",
+      "inputs": {"key": "no-retry-500-002", "status": 500, "block": "false"},
+      "outputs": {
+        "status_code": 500,
+        "body": {"key": "no-retry-500-002", "token": "no-retry-500-002", "attempt": 1, "applied_at": 1785837801.4771376, "pid": 1}
+      }
+    },
+    {
+      "workflow_run_id": "0c8db02e-d43c-4a3c-a27f-6e3062aa7d43",
+      "inputs": {"key": "retry-500-001", "status": 500, "block": "false"},
+      "workflow_outputs": null,
+      "effect_node_outputs": {
+        "status_code": 500,
+        "body": {"key": "retry-500-001", "token": "retry-500-001", "attempt": 4, "applied_at": 1785837853.6192992, "pid": 1}
+      }
+    },
+    {
+      "workflow_run_id": "05c7a291-6a1b-439a-9ec7-0e445f8acafb",
+      "inputs": {"key": "hitl-002"},
+      "workflow_outputs": null,
+      "effect_node_outputs": null
+    },
+    {
+      "workflow_run_id": "d100a649-ea4c-49f3-bd29-cd036b2ee685",
+      "inputs": {"key": "crash-mid-node-001", "status": 200, "block": "true"},
+      "outputs": {
+        "status_code": 502,
+        "proxy_error": "ERR_ZERO_SIZE_OBJECT",
+        "detail": "Squid did not receive any data for this request.",
+        "generated_at": "2026-08-04T10:10:59+00:00"
+      }
+    },
+    {
+      "workflow_run_id": "c326e948-e8e8-411d-a588-53ecd3ae81dc",
+      "inputs": {"key": "crash-worker-001", "status": 200, "block": "true"},
+      "outputs": {}
+    }
+  ],
+  "worker_log_excerpt": {
+    "timestamp": "2026-08-04T10:15:00.458",
+    "task": "workflow_based_app_execution_task",
+    "app_id": "d2cd725c-78e3-4669-b7d7-6bc0273856c8",
+    "workflow_run_id": "c326e948-e8e8-411d-a588-53ecd3ae81dc",
+    "invoke_from": "debugger",
+    "streaming": true,
+    "inputs": {"block": "true", "key": "crash-worker-001", "status": 200}
+  },
+  "container_log_excerpts": {
+    "api_after_hitl_pause": [
+      "[2026-08-04 10:07:38 +0000] [1] [INFO] Starting gunicorn 26.0.0",
+      "[2026-08-04 10:07:38 +0000] [1] [INFO] Listening at: http://0.0.0.0:5001 (1)",
+      "[2026-08-04 10:07:38 +0000] [90] [INFO] Booting worker with pid: 90"
+    ],
+    "worker_after_hard_kill": [
+      "2026-08-04 10:15:53.213 INFO [MainThread] [connection.py:22] - Connected to redis://:**@redis:6379/1",
+      "2026-08-04 10:15:54.261 INFO [MainThread] [worker.py:182] - celery@25e478118244 ready."
+    ]
+  },
+  "fault_injection_transcript": {
+    "commands": [
+      "poll until _dify_bench/sink/crash-worker-001.applied exists",
+      "docker kill docker-worker-1",
+      "docker restart dify-bench-sink",
+      "docker compose start worker"
+    ],
+    "verbatim_status_lines": [
+      "marker-observed",
+      "docker-worker-1",
+      "worker-killed",
+      "dify-bench-sink",
+      "sink-restarted",
+      "dify-bench-sink|Up 3 seconds",
+      "docker-worker-1|Exited (137) 14 seconds ago",
+      "docker-worker-1|Up 5 seconds"
+    ],
+    "kill_exit_code": 137,
+    "timestamp_limit": "The exact docker-kill timestamp was not archived. It occurred after the fsynced effect at 2026-08-04T10:15:00.507635+00:00 and before the worker reconnected at 2026-08-04T10:15:53.213+00:00."
+  },
+  "hitl_restart_timeline": [
+    {"event": "form_created", "timestamp": "2026-08-04T10:06:43.319703", "source": "human_input_forms"},
+    {"event": "api_gunicorn_started", "timestamp": "2026-08-04T10:07:38+00:00", "source": "docker-api-1 log"},
+    {"event": "form_submitted_approve", "timestamp": "2026-08-04T10:09:18.537684", "source": "human_input_forms"},
+    {"event": "effect_fsynced", "timestamp": "2026-08-04T10:09:18.645978+00:00", "source": "events.jsonl"}
+  ],
+  "operator_observations_not_independently_archived": [
+    "Before the API restart, the debugger and a live database query showed workflow status paused, total_steps 2, and zero hitl-002 sink events.",
+    "After the API restart, the original debugger SSE panel displayed failure while the persisted form remained available.",
+    "These two intermediate observations were not saved as a raw screenshot or query transcript; only the final form row, container restart log, effect event, and final workflow rows are independently preserved."
+  ],
+  "worker_crash_observation": {
+    "seconds_from_run_created_to_snapshot": 864.312677,
+    "effect_event_count_at_snapshot": 1,
+    "workflow_status_at_snapshot": "running",
+    "effect_node_status_at_snapshot": "running",
+    "automatic_redelivery_observed": false
+  }
+}
