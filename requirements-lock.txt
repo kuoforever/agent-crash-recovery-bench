@@ -1,0 +1,11 @@
+langchain-core==1.5.3
+langchain-openai==1.4.1
+langchain-protocol==0.0.18
+langgraph==1.2.10
+langgraph-checkpoint==4.1.1
+langgraph-checkpoint-sqlite==3.1.1
+langgraph-prebuilt==1.1.0
+langgraph-sdk==0.4.2
+openai==2.53.0
+pydantic==2.13.4
+pydantic_core==2.46.4

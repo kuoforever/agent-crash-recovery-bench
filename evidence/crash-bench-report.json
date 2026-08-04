@@ -1,0 +1,755 @@
+{
+  "runs": 30,
+  "steps_per_run": 20,
+  "ledger_off__durability_async": {
+    "crash_confirmed": 30,
+    "runs_with_duplicate_side_effect": 29,
+    "total_duplicate_side_effects": 128,
+    "stop_codes": {
+      "": 30
+    },
+    "trials": [
+      {
+        "idx": 0,
+        "crash_at": "0:pre_apply",
+        "crashed": true,
+        "dupes": 0,
+        "stop_code": "",
+        "sink_lines": 10
+      },
+      {
+        "idx": 1,
+        "crash_at": "2:post_apply",
+        "crashed": true,
+        "dupes": 2,
+        "stop_code": "",
+        "sink_lines": 12
+      },
+      {
+        "idx": 2,
+        "crash_at": "4:post_commit",
+        "crashed": true,
+        "dupes": 2,
+        "stop_code": "",
+        "sink_lines": 12
+      },
+      {
+        "idx": 3,
+        "crash_at": "6:pre_apply",
+        "crashed": true,
+        "dupes": 3,
+        "stop_code": "",
+        "sink_lines": 13
+      },
+      {
+        "idx": 4,
+        "crash_at": "8:post_apply",
+        "crashed": true,
+        "dupes": 4,
+        "stop_code": "",
+        "sink_lines": 14
+      },
+      {
+        "idx": 5,
+        "crash_at": "10:post_commit",
+        "crashed": true,
+        "dupes": 5,
+        "stop_code": "",
+        "sink_lines": 15
+      },
+      {
+        "idx": 6,
+        "crash_at": "12:pre_apply",
+        "crashed": true,
+        "dupes": 5,
+        "stop_code": "",
+        "sink_lines": 15
+      },
+      {
+        "idx": 7,
+        "crash_at": "14:post_apply",
+        "crashed": true,
+        "dupes": 7,
+        "stop_code": "",
+        "sink_lines": 17
+      },
+      {
+        "idx": 8,
+        "crash_at": "16:post_commit",
+        "crashed": true,
+        "dupes": 8,
+        "stop_code": "",
+        "sink_lines": 18
+      },
+      {
+        "idx": 9,
+        "crash_at": "18:pre_apply",
+        "crashed": true,
+        "dupes": 8,
+        "stop_code": "",
+        "sink_lines": 18
+      },
+      {
+        "idx": 10,
+        "crash_at": "0:post_apply",
+        "crashed": true,
+        "dupes": 1,
+        "stop_code": "",
+        "sink_lines": 11
+      },
+      {
+        "idx": 11,
+        "crash_at": "2:post_commit",
+        "crashed": true,
+        "dupes": 2,
+        "stop_code": "",
+        "sink_lines": 12
+      },
+      {
+        "idx": 12,
+        "crash_at": "4:pre_apply",
+        "crashed": true,
+        "dupes": 1,
+        "stop_code": "",
+        "sink_lines": 11
+      },
+      {
+        "idx": 13,
+        "crash_at": "6:post_apply",
+        "crashed": true,
+        "dupes": 3,
+        "stop_code": "",
+        "sink_lines": 13
+      },
+      {
+        "idx": 14,
+        "crash_at": "8:post_commit",
+        "crashed": true,
+        "dupes": 4,
+        "stop_code": "",
+        "sink_lines": 14
+      },
+      {
+        "idx": 15,
+        "crash_at": "10:pre_apply",
+        "crashed": true,
+        "dupes": 4,
+        "stop_code": "",
+        "sink_lines": 14
+      },
+      {
+        "idx": 16,
+        "crash_at": "12:post_apply",
+        "crashed": true,
+        "dupes": 5,
+        "stop_code": "",
+        "sink_lines": 15
+      },
+      {
+        "idx": 17,
+        "crash_at": "14:post_commit",
+        "crashed": true,
+        "dupes": 6,
+        "stop_code": "",
+        "sink_lines": 16
+      },
+      {
+        "idx": 18,
+        "crash_at": "16:pre_apply",
+        "crashed": true,
+        "dupes": 7,
+        "stop_code": "",
+        "sink_lines": 17
+      },
+      {
+        "idx": 19,
+        "crash_at": "18:post_apply",
+        "crashed": true,
+        "dupes": 8,
+        "stop_code": "",
+        "sink_lines": 18
+      },
+      {
+        "idx": 20,
+        "crash_at": "0:post_commit",
+        "crashed": true,
+        "dupes": 1,
+        "stop_code": "",
+        "sink_lines": 11
+      },
+      {
+        "idx": 21,
+        "crash_at": "2:pre_apply",
+        "crashed": true,
+        "dupes": 1,
+        "stop_code": "",
+        "sink_lines": 11
+      },
+      {
+        "idx": 22,
+        "crash_at": "4:post_apply",
+        "crashed": true,
+        "dupes": 3,
+        "stop_code": "",
+        "sink_lines": 13
+      },
+      {
+        "idx": 23,
+        "crash_at": "6:post_commit",
+        "crashed": true,
+        "dupes": 3,
+        "stop_code": "",
+        "sink_lines": 13
+      },
+      {
+        "idx": 24,
+        "crash_at": "8:pre_apply",
+        "crashed": true,
+        "dupes": 3,
+        "stop_code": "",
+        "sink_lines": 13
+      },
+      {
+        "idx": 25,
+        "crash_at": "10:post_apply",
+        "crashed": true,
+        "dupes": 4,
+        "stop_code": "",
+        "sink_lines": 14
+      },
+      {
+        "idx": 26,
+        "crash_at": "12:post_commit",
+        "crashed": true,
+        "dupes": 5,
+        "stop_code": "",
+        "sink_lines": 15
+      },
+      {
+        "idx": 27,
+        "crash_at": "14:pre_apply",
+        "crashed": true,
+        "dupes": 6,
+        "stop_code": "",
+        "sink_lines": 16
+      },
+      {
+        "idx": 28,
+        "crash_at": "16:post_apply",
+        "crashed": true,
+        "dupes": 8,
+        "stop_code": "",
+        "sink_lines": 18
+      },
+      {
+        "idx": 29,
+        "crash_at": "18:post_commit",
+        "crashed": true,
+        "dupes": 9,
+        "stop_code": "",
+        "sink_lines": 19
+      }
+    ]
+  },
+  "ledger_off__durability_sync": {
+    "crash_confirmed": 30,
+    "runs_with_duplicate_side_effect": 20,
+    "total_duplicate_side_effects": 20,
+    "stop_codes": {
+      "": 30
+    },
+    "trials": [
+      {
+        "idx": 0,
+        "crash_at": "0:pre_apply",
+        "crashed": true,
+        "dupes": 0,
+        "stop_code": "",
+        "sink_lines": 10
+      },
+      {
+        "idx": 1,
+        "crash_at": "2:post_apply",
+        "crashed": true,
+        "dupes": 1,
+        "stop_code": "",
+        "sink_lines": 11
+      },
+      {
+        "idx": 2,
+        "crash_at": "4:post_commit",
+        "crashed": true,
+        "dupes": 1,
+        "stop_code": "",
+        "sink_lines": 11
+      },
+      {
+        "idx": 3,
+        "crash_at": "6:pre_apply",
+        "crashed": true,
+        "dupes": 0,
+        "stop_code": "",
+        "sink_lines": 10
+      },
+      {
+        "idx": 4,
+        "crash_at": "8:post_apply",
+        "crashed": true,
+        "dupes": 1,
+        "stop_code": "",
+        "sink_lines": 11
+      },
+      {
+        "idx": 5,
+        "crash_at": "10:post_commit",
+        "crashed": true,
+        "dupes": 1,
+        "stop_code": "",
+        "sink_lines": 11
+      },
+      {
+        "idx": 6,
+        "crash_at": "12:pre_apply",
+        "crashed": true,
+        "dupes": 0,
+        "stop_code": "",
+        "sink_lines": 10
+      },
+      {
+        "idx": 7,
+        "crash_at": "14:post_apply",
+        "crashed": true,
+        "dupes": 1,
+        "stop_code": "",
+        "sink_lines": 11
+      },
+      {
+        "idx": 8,
+        "crash_at": "16:post_commit",
+        "crashed": true,
+        "dupes": 1,
+        "stop_code": "",
+        "sink_lines": 11
+      },
+      {
+        "idx": 9,
+        "crash_at": "18:pre_apply",
+        "crashed": true,
+        "dupes": 0,
+        "stop_code": "",
+        "sink_lines": 10
+      },
+      {
+        "idx": 10,
+        "crash_at": "0:post_apply",
+        "crashed": true,
+        "dupes": 1,
+        "stop_code": "",
+        "sink_lines": 11
+      },
+      {
+        "idx": 11,
+        "crash_at": "2:post_commit",
+        "crashed": true,
+        "dupes": 1,
+        "stop_code": "",
+        "sink_lines": 11
+      },
+      {
+        "idx": 12,
+        "crash_at": "4:pre_apply",
+        "crashed": true,
+        "dupes": 0,
+        "stop_code": "",
+        "sink_lines": 10
+      },
+      {
+        "idx": 13,
+        "crash_at": "6:post_apply",
+        "crashed": true,
+        "dupes": 1,
+        "stop_code": "",
+        "sink_lines": 11
+      },
+      {
+        "idx": 14,
+        "crash_at": "8:post_commit",
+        "crashed": true,
+        "dupes": 1,
+        "stop_code": "",
+        "sink_lines": 11
+      },
+      {
+        "idx": 15,
+        "crash_at": "10:pre_apply",
+        "crashed": true,
+        "dupes": 0,
+        "stop_code": "",
+        "sink_lines": 10
+      },
+      {
+        "idx": 16,
+        "crash_at": "12:post_apply",
+        "crashed": true,
+        "dupes": 1,
+        "stop_code": "",
+        "sink_lines": 11
+      },
+      {
+        "idx": 17,
+        "crash_at": "14:post_commit",
+        "crashed": true,
+        "dupes": 1,
+        "stop_code": "",
+        "sink_lines": 11
+      },
+      {
+        "idx": 18,
+        "crash_at": "16:pre_apply",
+        "crashed": true,
+        "dupes": 0,
+        "stop_code": "",
+        "sink_lines": 10
+      },
+      {
+        "idx": 19,
+        "crash_at": "18:post_apply",
+        "crashed": true,
+        "dupes": 1,
+        "stop_code": "",
+        "sink_lines": 11
+      },
+      {
+        "idx": 20,
+        "crash_at": "0:post_commit",
+        "crashed": true,
+        "dupes": 1,
+        "stop_code": "",
+        "sink_lines": 11
+      },
+      {
+        "idx": 21,
+        "crash_at": "2:pre_apply",
+        "crashed": true,
+        "dupes": 0,
+        "stop_code": "",
+        "sink_lines": 10
+      },
+      {
+        "idx": 22,
+        "crash_at": "4:post_apply",
+        "crashed": true,
+        "dupes": 1,
+        "stop_code": "",
+        "sink_lines": 11
+      },
+      {
+        "idx": 23,
+        "crash_at": "6:post_commit",
+        "crashed": true,
+        "dupes": 1,
+        "stop_code": "",
+        "sink_lines": 11
+      },
+      {
+        "idx": 24,
+        "crash_at": "8:pre_apply",
+        "crashed": true,
+        "dupes": 0,
+        "stop_code": "",
+        "sink_lines": 10
+      },
+      {
+        "idx": 25,
+        "crash_at": "10:post_apply",
+        "crashed": true,
+        "dupes": 1,
+        "stop_code": "",
+        "sink_lines": 11
+      },
+      {
+        "idx": 26,
+        "crash_at": "12:post_commit",
+        "crashed": true,
+        "dupes": 1,
+        "stop_code": "",
+        "sink_lines": 11
+      },
+      {
+        "idx": 27,
+        "crash_at": "14:pre_apply",
+        "crashed": true,
+        "dupes": 0,
+        "stop_code": "",
+        "sink_lines": 10
+      },
+      {
+        "idx": 28,
+        "crash_at": "16:post_apply",
+        "crashed": true,
+        "dupes": 1,
+        "stop_code": "",
+        "sink_lines": 11
+      },
+      {
+        "idx": 29,
+        "crash_at": "18:post_commit",
+        "crashed": true,
+        "dupes": 1,
+        "stop_code": "",
+        "sink_lines": 11
+      }
+    ]
+  },
+  "ledger_on__durability_async": {
+    "crash_confirmed": 30,
+    "runs_with_duplicate_side_effect": 0,
+    "total_duplicate_side_effects": 0,
+    "stop_codes": {
+      "UNCERTAIN_HALT": 20,
+      "": 10
+    },
+    "trials": [
+      {
+        "idx": 0,
+        "crash_at": "0:pre_apply",
+        "crashed": true,
+        "dupes": 0,
+        "stop_code": "UNCERTAIN_HALT",
+        "sink_lines": 0
+      },
+      {
+        "idx": 1,
+        "crash_at": "2:post_apply",
+        "crashed": true,
+        "dupes": 0,
+        "stop_code": "UNCERTAIN_HALT",
+        "sink_lines": 2
+      },
+      {
+        "idx": 2,
+        "crash_at": "4:post_commit",
+        "crashed": true,
+        "dupes": 0,
+        "stop_code": "",
+        "sink_lines": 10
+      },
+      {
+        "idx": 3,
+        "crash_at": "6:pre_apply",
+        "crashed": true,
+        "dupes": 0,
+        "stop_code": "UNCERTAIN_HALT",
+        "sink_lines": 3
+      },
+      {
+        "idx": 4,
+        "crash_at": "8:post_apply",
+        "crashed": true,
+        "dupes": 0,
+        "stop_code": "UNCERTAIN_HALT",
+        "sink_lines": 5
+      },
+      {
+        "idx": 5,
+        "crash_at": "10:post_commit",
+        "crashed": true,
+        "dupes": 0,
+        "stop_code": "",
+        "sink_lines": 10
+      },
+      {
+        "idx": 6,
+        "crash_at": "12:pre_apply",
+        "crashed": true,
+        "dupes": 0,
+        "stop_code": "UNCERTAIN_HALT",
+        "sink_lines": 6
+      },
+      {
+        "idx": 7,
+        "crash_at": "14:post_apply",
+        "crashed": true,
+        "dupes": 0,
+        "stop_code": "UNCERTAIN_HALT",
+        "sink_lines": 8
+      },
+      {
+        "idx": 8,
+        "crash_at": "16:post_commit",
+        "crashed": true,
+        "dupes": 0,
+        "stop_code": "",
+        "sink_lines": 10
+      },
+      {
+        "idx": 9,
+        "crash_at": "18:pre_apply",
+        "crashed": true,
+        "dupes": 0,
+        "stop_code": "UNCERTAIN_HALT",
+        "sink_lines": 9
+      },
+      {
+        "idx": 10,
+        "crash_at": "0:post_apply",
+        "crashed": true,
+        "dupes": 0,
+        "stop_code": "UNCERTAIN_HALT",
+        "sink_lines": 1
+      },
+      {
+        "idx": 11,
+        "crash_at": "2:post_commit",
+        "crashed": true,
+        "dupes": 0,
+        "stop_code": "",
+        "sink_lines": 10
+      },
+      {
+        "idx": 12,
+        "crash_at": "4:pre_apply",
+        "crashed": true,
+        "dupes": 0,
+        "stop_code": "UNCERTAIN_HALT",
+        "sink_lines": 2
+      },
+      {
+        "idx": 13,
+        "crash_at": "6:post_apply",
+        "crashed": true,
+        "dupes": 0,
+        "stop_code": "UNCERTAIN_HALT",
+        "sink_lines": 4
+      },
+      {
+        "idx": 14,
+        "crash_at": "8:post_commit",
+        "crashed": true,
+        "dupes": 0,
+        "stop_code": "",
+        "sink_lines": 10
+      },
+      {
+        "idx": 15,
+        "crash_at": "10:pre_apply",
+        "crashed": true,
+        "dupes": 0,
+        "stop_code": "UNCERTAIN_HALT",
+        "sink_lines": 5
+      },
+      {
+        "idx": 16,
+        "crash_at": "12:post_apply",
+        "crashed": true,
+        "dupes": 0,
+        "stop_code": "UNCERTAIN_HALT",
+        "sink_lines": 7
+      },
+      {
+        "idx": 17,
+        "crash_at": "14:post_commit",
+        "crashed": true,
+        "dupes": 0,
+        "stop_code": "",
+        "sink_lines": 10
+      },
+      {
+        "idx": 18,
+        "crash_at": "16:pre_apply",
+        "crashed": true,
+        "dupes": 0,
+        "stop_code": "UNCERTAIN_HALT",
+        "sink_lines": 8
+      },
+      {
+        "idx": 19,
+        "crash_at": "18:post_apply",
+        "crashed": true,
+        "dupes": 0,
+        "stop_code": "UNCERTAIN_HALT",
+        "sink_lines": 10
+      },
+      {
+        "idx": 20,
+        "crash_at": "0:post_commit",
+        "crashed": true,
+        "dupes": 0,
+        "stop_code": "",
+        "sink_lines": 10
+      },
+      {
+        "idx": 21,
+        "crash_at": "2:pre_apply",
+        "crashed": true,
+        "dupes": 0,
+        "stop_code": "UNCERTAIN_HALT",
+        "sink_lines": 1
+      },
+      {
+        "idx": 22,
+        "crash_at": "4:post_apply",
+        "crashed": true,
+        "dupes": 0,
+        "stop_code": "UNCERTAIN_HALT",
+        "sink_lines": 3
+      },
+      {
+        "idx": 23,
+        "crash_at": "6:post_commit",
+        "crashed": true,
+        "dupes": 0,
+        "stop_code": "",
+        "sink_lines": 10
+      },
+      {
+        "idx": 24,
+        "crash_at": "8:pre_apply",
+        "crashed": true,
+        "dupes": 0,
+        "stop_code": "UNCERTAIN_HALT",
+        "sink_lines": 4
+      },
+      {
+        "idx": 25,
+        "crash_at": "10:post_apply",
+        "crashed": true,
+        "dupes": 0,
+        "stop_code": "UNCERTAIN_HALT",
+        "sink_lines": 6
+      },
+      {
+        "idx": 26,
+        "crash_at": "12:post_commit",
+        "crashed": true,
+        "dupes": 0,
+        "stop_code": "",
+        "sink_lines": 10
+      },
+      {
+        "idx": 27,
+        "crash_at": "14:pre_apply",
+        "crashed": true,
+        "dupes": 0,
+        "stop_code": "UNCERTAIN_HALT",
+        "sink_lines": 7
+      },
+      {
+        "idx": 28,
+        "crash_at": "16:post_apply",
+        "crashed": true,
+        "dupes": 0,
+        "stop_code": "UNCERTAIN_HALT",
+        "sink_lines": 9
+      },
+      {
+        "idx": 29,
+        "crash_at": "18:post_commit",
+        "crashed": true,
+        "dupes": 0,
+        "stop_code": "",
+        "sink_lines": 10
+      }
+    ]
+  }
+}

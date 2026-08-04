@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+
+# 运行产物：三条命令可原地重跑生成。
+# 需要长期留存的结果已复制进 evidence/。
+_bench/
+_eval/
+_llm/
+_smoke/
+*.sqlite
+sink.log
