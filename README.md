@@ -19,8 +19,9 @@
 | 本文件 | 结论与数字 |
 | `docs/DESIGN.md` | 为什么是这个形状：三态语义、两段式账本、崩溃注入方法学、已知限制 |
 | `docs/HANDOFF.md` | 交接：做完了什么、还差什么、红线在哪 |
-| `docs/DIFY-STATUS.md` | Dify 已装好但卡住，卡在哪、怎么解 |
-| `evidence/` | 原始数据：崩溃注入报告、真实模型 trace |
+| `docs/DIFY-STATUS.md` | Dify 1.16.1 对照实验、复现环境与运行状态 |
+| `dify/` | 三个可导入的 Dify DSL：不重试、重试 3 次、人工审批 |
+| `evidence/` | 原始数据：崩溃注入报告、真实模型 trace、Dify 摘要与脱敏原始快照 |
 
 ## 跑什么
 
@@ -90,6 +91,41 @@ python -m guarded_loop.llm_run                                          # 真实
 
 崩溃基准刻意不接模型：恢复语义要单独量，模型的随机性混进去就成噪声了。
 
+## Dify 1.16.1 debugger 对照：重试重复做；本次 worker 崩溃运行未恢复
+
+本地 Docker Compose 版 Dify 1.16.1 上又跑了三条同构工作流。HTTP sink 会先 `fsync`
+副作用记录，再返回指定状态码；也可以在落盘后、返回前阻塞，给硬杀进程留出确定窗口。
+整理后的结论在 `evidence/dify-semantics-report.json`，逐事件、数据库行、脱敏 I/O、容器启动日志
+与故障注入 transcript 在
+`evidence/dify-raw-snapshot.json`，可导入 DSL 在 `dify/`。三个 DSL 的实验 key 限定为
+`[A-Za-z0-9_.-]{1,120}`，不把任意用户文本直接当作 JSON 测试输入。
+
+| 场景 | Dify 最终状态 | 副作用次数 | 实测语义 |
+|---|---:|---:|---|
+| HTTP 500，不重试、无错误策略 | `succeeded` | 1 | 500 作为普通输出向后传，工作流仍成功 |
+| HTTP 500，最多重试 3 次 | `failed` | **4** | 初次调用 + 3 次整节点重试，每次都已产生副作用 |
+| 人工审批前重启 API 容器 | `stopped` | 1 | 审批表单与恢复状态持久化；本次原调试器响应流未续接 |
+| 副作用落盘后硬杀 worker | 快照时仍 `running` | 1 | 约 14 分 24 秒内未观察到重投或收敛；HTTP 节点仍为 `running` |
+
+证据完整度也单独记账：HITL 在 API 重启前的 `paused / total_steps=2 / sink=0` 是当时操作者观察，
+没有保存中间截图或查询 transcript；仓库可独立复核的是“表单创建 → API 新进程启动 → 表单提交 →
+副作用落盘 → 最终运行停止”这条时间线。worker 的精确 `docker kill` 时刻同样没有留存，原始快照只给出
+副作用落盘与 worker 重新连接之间的时间边界、退出码 137 和终端状态行。
+
+两条边界必须一起说：
+
+- Dify 的 HTTP 节点确实提供重试和错误处理配置；人工输入节点也提供暂停、表单提交与恢复。
+  但重试的单位是整个节点，不替调用方解决副作用幂等。官方 CLI 文档也明确提醒：对可能已开始执行的
+  POST 自动重试并不安全。
+- 杀 `api` 不是杀执行器。实测任务在 `worker` 内执行；API 重启时任务仍可继续。
+  真正硬杀 worker 后，这一次 debugger 运行在约 14 分 24 秒的观察窗口内没有重复副作用，
+  也没有自动恢复；不能据此推出更长时间或其他部署方式的行为。
+
+对应官方文档：[HTTP Request](https://docs.dify.ai/en/cloud/use-dify/nodes/http-request)、
+[错误处理](https://docs.dify.ai/en/cloud/use-dify/build/predefined-error-handling-logic)、
+[Human Input](https://docs.dify.ai/en/cloud/use-dify/nodes/human-input)、
+[POST 重试风险](https://docs.dify.ai/en/cli/integrate-agents/error-handling-and-retries-for-agents)。
+
 ## 边界（面试时必须一起说）
 
 - 这是**为了对齐语义写的对照实现**，不是生产系统，没有上线、没有真实用户。
@@ -97,3 +133,5 @@ python -m guarded_loop.llm_run                                          # 真实
 - 只覆盖 LangGraph 的 StateGraph / checkpointer / interrupt 三块。
   LangChain 生态里的 RAG、向量库、Agent 预制件我仍然没有用过。
 - 崩溃注入 30 次 × 20 步，规模比我自己项目里那个基准（30 × 100）小。
+- Dify 只覆盖本地 1.16.1 的单次草稿调试运行、HTTP Request 与 Human Input；没有覆盖已发布 API、
+  集群部署、定时任务或消息可见性超时后的延迟恢复。worker 崩溃结论只适用于已记录的约 14 分 24 秒窗口。
