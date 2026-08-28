@@ -1,0 +1,386 @@
+{
+  "schema_version": 1,
+  "captured_at_utc": "2026-08-28T05:46:47.285346254Z",
+  "evidence_kind": "sanitized_raw_snapshot",
+  "scope": "Dify 1.16.1 Published Service API executor attribution and single-worker hard-crash behavior in one isolated local Docker Compose deployment",
+  "provenance": {
+    "effect_events": "Exact parsed records from ignored runtime file _dify_bench/published-20260828/sink/events.jsonl.",
+    "workflow_rows": "Read-only PostgreSQL queries against the isolated Compose database.",
+    "broker_snapshots": "Read-only Redis DB 1 LLEN, TYPE, HLEN, and ZCARD queries captured before kill, after kill, after restart, and during follow-up snapshots.",
+    "executor_attribution": "The exact workflow run id was present both in the target worker log and in celery inspect active before the target container was killed.",
+    "celery_runtime": "Console output from ignored helper inspect_celery_runtime.py executed inside the measured worker; the values are transcribed here, but no separate runtime-output file was archived.",
+    "client_observations": "Sanitized outputs from ignored local API clients; all credential and session material is omitted.",
+    "source_attribution": "Read-only inspection of the checked-out Dify source revision recorded below.",
+    "fault_transcript": "Exact relevant values copied from ignored runtime transcript _dify_bench/published-20260828/stream-fault-001/fault-transcript.txt."
+  },
+  "environment": {
+    "dify_version": "1.16.1",
+    "dify_source_commit": "5456d4d56e5701999bc8da2a2c97f5ae9b3b78d3",
+    "deployment": "Docker Compose in dedicated WSL distribution DifyBench-Isolated-20260828",
+    "compose_project": "dify_pub_20260828",
+    "docker_server_version": "29.1.3",
+    "docker_compose_version": "2.29.7",
+    "api_image_id": "sha256:48295be2027d55f7791231c32b1e585a03eed42e3f88d014ae39ee15eb6362cb",
+    "worker_image_id": "sha256:48295be2027d55f7791231c32b1e585a03eed42e3f88d014ae39ee15eb6362cb",
+    "compose_default_network_id": "b346a4c948eae36bf56713e561041889d1ddfeb62e05f19679fd71cdd1e1febe",
+    "compose_default_subnet": "172.27.0.0/16",
+    "windows_nginx_entrypoint": "http://127.0.0.1:18088",
+    "streaming_client_entrypoint": "http://api:5001 inside dify_pub_20260828_default",
+    "effect_sink": "guarded_loop.dify_sink",
+    "models_or_external_api_keys_required": false
+  },
+  "isolation": {
+    "database_and_redis": "Fresh bind-mounted state under the copied isolated Compose directory; not the original debugger database or Redis state.",
+    "original_distribution_final_state": "Ubuntu stopped; DifyBench-Isolated-20260828 running for this experiment.",
+    "original_runtime_preflight_incident": {
+      "classification": "operator_terminal_observation_not_independently_archived_in_this_file",
+      "observed_at_utc": "2026-08-28T05:02:54Z",
+      "observation": "A wsl --system preflight unexpectedly started the original Ubuntu distribution and its restart-enabled old containers briefly. Immediate read-only checks showed debugger run c326e948-e8e8-411d-a588-53ecd3ae81dc still running, total_steps 0, one crash-worker-001 effect, the old sink still exited, and no matching new worker task log. Ubuntu was then terminated before the isolated VHD experiment proceeded.",
+      "limitation": "The original runtime was briefly started, so it is not described as untouched; the previously committed debugger evidence files were not modified."
+    }
+  },
+  "published_app": {
+    "app_id": "4a820f63-bd4b-47dd-9854-f36751116d8e",
+    "workflow_id": "249f4342-8fd8-4def-a464-15ee54426e6e",
+    "workflow_version": "2026-08-28 05:18:16.619348",
+    "dsl": "dify/http-no-retry.yml",
+    "dsl_file_sha256_bytes": "d16c16e5e3918e66cc425fcf00364f674f8fded7eedb0c4f96241c8525037c69",
+    "dsl_text_sha256_after_universal_newline_decode": "e47d0a557edeee738823b18fded1b758c5ef624fbcfe5254598d6d2162563128",
+    "api_token_sha256_prefix": "ac9a417d2723c9d0",
+    "api_token_value_archived": false
+  },
+  "source_based_executor_attribution": {
+    "controller": {
+      "path": "api/controllers/service_api/app/workflow.py",
+      "lines": "344-354",
+      "observation": "response_mode determines the streaming boolean passed to AppGenerateService.generate."
+    },
+    "published_workflow_streaming": {
+      "path": "api/services/app_generate_service.py",
+      "lines": "294-325",
+      "observation": "The streaming branch builds AppExecutionParams and calls workflow_based_app_execution_task.delay(payload_json)."
+    },
+    "published_workflow_blocking": {
+      "path": "api/services/app_generate_service.py",
+      "lines": "327-346",
+      "observation": "The blocking branch calls WorkflowAppGenerator.generate with streaming=False instead of enqueuing the Celery task."
+    },
+    "blocking_thread": {
+      "path": "api/core/app/apps/workflow/app_generator.py",
+      "lines": "377-429",
+      "observation": "WorkflowAppGenerator starts and joins an in-process Python worker_thread."
+    },
+    "celery_task": {
+      "path": "api/tasks/app_generate/workflow_execute_task.py",
+      "lines": "471-480",
+      "observation": "workflow_based_app_execution_task is a shared task routed to WORKFLOW_BASED_APP_EXECUTION_QUEUE."
+    }
+  },
+  "celery_runtime": {
+    "celery_version": "5.6.3",
+    "task_name": "tasks.app_generate.workflow_execute_task.workflow_based_app_execution_task",
+    "task_acks_late_global": false,
+    "task_acks_late_effective": false,
+    "task_reject_on_worker_lost_global": false,
+    "task_reject_on_worker_lost_effective": false,
+    "task_acks_on_failure_or_timeout": true,
+    "worker_prefetch_multiplier_from_app_config": 4,
+    "broker_transport_options": {}
+  },
+  "effect_events": [
+    {
+      "key": "pub-control-001",
+      "token": "pub-control-001",
+      "attempt": 1,
+      "applied_at": 1787894417.4424198,
+      "pid": 1
+    },
+    {
+      "key": "pub-worker-crash-001",
+      "token": "pub-worker-crash-001",
+      "attempt": 1,
+      "applied_at": 1787894736.41743,
+      "pid": 1
+    },
+    {
+      "key": "pub-stream-control-002",
+      "token": "pub-stream-control-002",
+      "attempt": 1,
+      "applied_at": 1787895720.5081906,
+      "pid": 1
+    },
+    {
+      "key": "pub-stream-worker-crash-001",
+      "token": "pub-stream-worker-crash-001",
+      "attempt": 1,
+      "applied_at": 1787895798.861033,
+      "pid": 1
+    }
+  ],
+  "cases": {
+    "published_blocking_success_control": {
+      "input_key": "pub-control-001",
+      "response_mode": "blocking",
+      "task_id": "1c6580e5-3d64-4e18-b4b8-c83a0dc6325b",
+      "workflow_run_id": "867a7b76-568b-45da-911d-47418fdfec49",
+      "dify_status": "succeeded",
+      "total_steps": 3,
+      "elapsed_time_seconds": 0.113523,
+      "effect_attempts": [
+        1
+      ]
+    },
+    "published_blocking_executor_attribution_control": {
+      "input_key": "pub-worker-crash-001",
+      "response_mode": "blocking",
+      "workflow_run_id": "9b23fb0d-b3eb-4d37-af3b-159057e84f90",
+      "client": {
+        "started_at_utc": "2026-08-28T05:25:35.925618+00:00",
+        "finished_at_utc": "2026-08-28T05:27:35.643913+00:00",
+        "monotonic_elapsed_seconds": 119.69206929998472,
+        "outer_http_status": 200
+      },
+      "intended_fault": {
+        "target_container": "dify_pub_20260828-worker-1",
+        "target_container_id": "8569453ae6aaf3c91009e2e92a83ea3c2dd23d8a675eef50f87f80571551eea8",
+        "kill_started_at_utc": "2026-08-28T05:25:47.679093948Z",
+        "kill_finished_at_utc": "2026-08-28T05:25:48.277809500Z",
+        "exit_code": 137,
+        "target_attribution_valid": false,
+        "reason": "The blocking path executed in the API process and no matching task was present in the Celery worker."
+      },
+      "redis_snapshots": [
+        {
+          "phase": "before_worker_kill",
+          "captured_at_utc": "2026-08-28T05:25:40.961509460Z",
+          "queue_len": 0,
+          "unacked_type": "none",
+          "unacked_hlen": 0,
+          "unacked_index_type": "none",
+          "unacked_index_zcard": 0
+        },
+        {
+          "phase": "after_worker_kill",
+          "captured_at_utc": "2026-08-28T05:25:48.734056096Z",
+          "queue_len": 0,
+          "unacked_type": "none",
+          "unacked_hlen": 0,
+          "unacked_index_type": "none",
+          "unacked_index_zcard": 0
+        },
+        {
+          "phase": "after_worker_restart",
+          "captured_at_utc": "2026-08-28T05:26:11.565175881Z",
+          "queue_len": 0,
+          "unacked_type": "none",
+          "unacked_hlen": 0,
+          "unacked_index_type": "none",
+          "unacked_index_zcard": 0
+        }
+      ],
+      "intermediate_database_snapshot": {
+        "captured_at_utc": "2026-08-28T05:26:45.595062947Z",
+        "workflow_status": "running",
+        "total_steps": 0,
+        "node_statuses": {
+          "start": "succeeded",
+          "effect": "running"
+        }
+      },
+      "final_database_snapshot": {
+        "workflow_status": "succeeded",
+        "total_steps": 3,
+        "elapsed_time_seconds": 119.874757,
+        "created_at": "2026-08-28 05:25:36.405672",
+        "finished_at": "2026-08-28 05:27:36.280429",
+        "effect_node_status": "succeeded",
+        "effect_node_elapsed_time_seconds": 119.75666,
+        "effect_node_returned_status_code": 504,
+        "effect_node_body_classification": "squid_err_read_timeout",
+        "effect_attempts": [
+          1
+        ]
+      },
+      "classification": "executor_attribution_control_not_worker_crash_recovery"
+    },
+    "published_streaming_success_control": {
+      "input_key": "pub-stream-control-002",
+      "response_mode": "streaming",
+      "workflow_run_id": "b4ca02b4-d0ac-47a4-ab0b-dd18258ed4e2",
+      "api_task_id": "72fd58af-df3c-45a3-bd66-c1b2bea8cc70",
+      "celery_task_id": "a8c177f0-1882-4b4a-96e5-106ecf1ca938",
+      "worker_received_at_utc": "2026-08-28T05:42:00.164Z",
+      "client_monotonic_elapsed_seconds": 0.5770935330001521,
+      "outer_http_status": 200,
+      "dify_status": "succeeded",
+      "total_steps": 3,
+      "effect_node_returned_status_code": 200,
+      "effect_attempts": [
+        1
+      ],
+      "executor_attribution_valid": true
+    },
+    "published_streaming_worker_kill_after_effect": {
+      "input_key": "pub-stream-worker-crash-001",
+      "response_mode": "streaming",
+      "workflow_run_id": "28e83e19-b8af-4344-8421-0b887b27712a",
+      "celery_task": {
+        "id": "efc1b57f-a40d-4825-abca-3fa79233d298",
+        "name": "tasks.app_generate.workflow_execute_task.workflow_based_app_execution_task",
+        "hostname": "celery@8569453ae6aa",
+        "worker_log_started_at_utc": "2026-08-28T05:43:18.840Z",
+        "inspect_time_start_epoch": 1787895798.8398583,
+        "acknowledged": true,
+        "routing_key": "workflow_based_app_execution",
+        "redelivered": false,
+        "executor_attribution_valid": true
+      },
+      "effect_marker": {
+        "observed_at_utc": "2026-08-28T05:43:18.952316825Z",
+        "attempt": 1,
+        "applied_at": 1787895798.861033
+      },
+      "database_before_kill": {
+        "workflow_status": "running",
+        "total_steps": 0,
+        "created_at": "2026-08-28 05:43:18.849966",
+        "node_statuses": {
+          "start": "succeeded",
+          "effect": "running"
+        }
+      },
+      "fault_injection": {
+        "worker_container": "dify_pub_20260828-worker-1",
+        "worker_container_id": "8569453ae6aaf3c91009e2e92a83ea3c2dd23d8a675eef50f87f80571551eea8",
+        "restart_policy_before": "always",
+        "restart_policy_during_fault": "no",
+        "kill_started_at_utc": "2026-08-28T05:43:38.839025382Z",
+        "kill_finished_at_utc": "2026-08-28T05:43:39.237998123Z",
+        "container_finished_at_utc": "2026-08-28T05:43:38.971949646Z",
+        "exit_code": 137,
+        "explicit_restart_started_at_utc": "2026-08-28T05:43:40.089227530Z",
+        "worker_started_at_utc": "2026-08-28T05:43:40.171940406Z",
+        "worker_ready_observed_at_utc": "2026-08-28T05:43:58.058141515Z",
+        "restart_policy_restored": "always"
+      },
+      "redis_snapshots": [
+        {
+          "phase": "before_kill_after_active_attribution",
+          "captured_at_utc": "2026-08-28T05:43:37.486531456Z",
+          "queue_len": 0,
+          "unacked_type": "none",
+          "unacked_hlen": 0,
+          "unacked_index_type": "none",
+          "unacked_index_zcard": 0
+        },
+        {
+          "phase": "after_kill",
+          "captured_at_utc": "2026-08-28T05:43:39.317493612Z",
+          "queue_len": 0,
+          "unacked_type": "none",
+          "unacked_hlen": 0,
+          "unacked_index_type": "none",
+          "unacked_index_zcard": 0
+        },
+        {
+          "phase": "after_worker_restart",
+          "captured_at_utc": "2026-08-28T05:43:58.204802079Z",
+          "queue_len": 0,
+          "unacked_type": "none",
+          "unacked_hlen": 0,
+          "unacked_index_type": "none",
+          "unacked_index_zcard": 0
+        }
+      ],
+      "follow_up_snapshots": [
+        {
+          "captured_at_utc": "2026-08-28T05:44:33.772621738Z",
+          "workflow_status": "running",
+          "total_steps": 0,
+          "effect_node_status": "running",
+          "effect_count": 1,
+          "queue_len": 0,
+          "unacked_hlen": 0,
+          "matching_worker_log_after_restart": false
+        },
+        {
+          "captured_at_utc": "2026-08-28T05:45:37.811641857Z",
+          "workflow_status": "running",
+          "total_steps": 0,
+          "effect_node_status": "running",
+          "effect_count": 1,
+          "queue_len": 0,
+          "unacked_hlen": 0,
+          "matching_worker_log_after_restart": false
+        },
+        {
+          "captured_at_utc": "2026-08-28T05:46:09.237721236Z",
+          "workflow_status": "running",
+          "total_steps": 0,
+          "effect_node_status": "running",
+          "effect_count": 1,
+          "queue_len": 0,
+          "unacked_hlen": 0,
+          "matching_worker_log_after_restart": false
+        },
+        {
+          "captured_at_utc": "2026-08-28T05:46:47.285346254Z",
+          "workflow_status": "running",
+          "total_steps": 0,
+          "effect_node_status": "running",
+          "effect_count": 1,
+          "queue_len": 0,
+          "unacked_hlen": 0,
+          "matching_worker_log_after_restart": false
+        }
+      ],
+      "client_final_observation": {
+        "configured_socket_timeout_seconds": 180.0,
+        "monotonic_elapsed_seconds": 200.17023907500015,
+        "outer_http_status_headers_received": 200,
+        "terminal_sse_event_received": false,
+        "final_state": "exception",
+        "exception_type": "TimeoutError",
+        "finished_at_utc": "2026-08-28T05:46:46.637977+00:00"
+      },
+      "final_database_snapshot": {
+        "workflow_status": "running",
+        "total_steps": 0,
+        "elapsed_time": 0,
+        "finished_at": null,
+        "node_statuses": {
+          "start": "succeeded",
+          "effect": "running"
+        },
+        "effect_attempts": [
+          1
+        ],
+        "automatic_redelivery_observed": false,
+        "application_level_convergence_observed": false
+      }
+    }
+  },
+  "invalidated_attempts_and_environment_repairs": [
+    {
+      "input_key": "pub-stream-control-001",
+      "started_at_utc": "2026-08-28T05:30:42.927028+00:00",
+      "client_elapsed_seconds": 60.011622600024566,
+      "client_exception": "TimeoutError",
+      "nginx_result": "HTTP 499 after the client closed",
+      "workflow_run_created": false,
+      "effect_created": false,
+      "celery_task_observed": false,
+      "evidence_class": "operator_terminal_observation_plus_ignored_client_json_not_independently_archived_as_a_log_snapshot",
+      "invalid_reason": "New Docker bridge networks were missing from the host DOCKER-FORWARD and DOCKER-BRIDGE iptables rules, so DNS resolved but fresh cross-container Redis TCP connections timed out.",
+      "repair": "Restarted the Docker daemon inside only DifyBench-Isolated-20260828, verified the new bridge rules were installed, verified a cross-container authenticated Redis PONG, waited for API health and worker readiness, and then used a new key for the valid control and fault runs."
+    }
+  ],
+  "interpretation_limits": [
+    "The blocking executor-attribution control is not a Celery worker recovery test; its task ACK settings and Redis visibility timeout are not applicable to that execution path.",
+    "The streaming fault case is one local run with one worker, one published workflow, and an approximately three-minute post-kill observation window.",
+    "No automatic redelivery or convergence was observed in that window; this is not proof that no separate long-delay reconciler could ever act.",
+    "The observed acknowledged=true active task, effective task_acks_late=false, and empty unacked structures explain why Redis visibility timeout did not provide a recovery trigger in this configuration.",
+    "The API client wall-clock timestamps and monotonic duration differ because the local WSL/container clock adjusted during the run; duration claims use the monotonic client value or are stated approximately.",
+    "No production deployment, cluster worker loss, API executor crash, scheduled task, model provider, or real user traffic was tested."
+  ]
+}

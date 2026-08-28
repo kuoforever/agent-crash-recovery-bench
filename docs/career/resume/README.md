@@ -1,7 +1,7 @@
 # Resume evidence index
 
 > **Status: current derived job-application view, reviewed against retained
-> evidence on 2026-08-10.** This is not a final resume or production record.
+> evidence on 2026-08-28.** This is not a final resume or production record.
 
 | ID | Highlight | Evidence scope |
 | --- | --- | --- |
@@ -9,7 +9,7 @@
 | `ACR-02` | [Tri-state effect semantics and intent ledger](ACR-02-tristate-ledger.md) | Deterministic local side-effect sink |
 | `ACR-03` | [LangGraph checkpoint and HITL semantics](ACR-03-langgraph-semantics.md) | StateGraph/checkpointer/interrupt only |
 | `ACR-04` | [Trace-based deterministic evaluation](ACR-04-trace-evaluation.md) | 10 frozen local cases |
-| `ACR-05` | [Dify recovery semantics experiment](ACR-05-dify-semantics.md) | One local Dify 1.16.1 debugger environment |
+| `ACR-05` | [Dify recovery semantics experiment](ACR-05-dify-semantics.md) | Local debugger + isolated Published API single-worker runs |
 
 ## Selection rules
 

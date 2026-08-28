@@ -1,0 +1,123 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-08-28",
+  "evidence_kind": "curated_summary",
+  "raw_snapshot": "evidence/dify-published-crash-raw.json",
+  "environment": {
+    "dify_version": "1.16.1",
+    "dify_source_commit": "5456d4d56e5701999bc8da2a2c97f5ae9b3b78d3",
+    "deployment": "Isolated local Docker Compose stack in DifyBench-Isolated-20260828",
+    "published_app_id": "4a820f63-bd4b-47dd-9854-f36751116d8e",
+    "workflow_id": "249f4342-8fd8-4def-a464-15ee54426e6e"
+  },
+  "execution_modes": {
+    "blocking": "Runs the published workflow in an in-process API worker thread in this Dify revision.",
+    "streaming": "Enqueues workflow_based_app_execution_task on the Celery workflow_based_app_execution queue in this Dify revision."
+  },
+  "cases": [
+    {
+      "name": "published_blocking_executor_attribution_control",
+      "input_key": "pub-worker-crash-001",
+      "workflow_run_id": "9b23fb0d-b3eb-4d37-af3b-159057e84f90",
+      "response_mode": "blocking",
+      "attempted_fault": "Killed the Celery worker after the effect marker.",
+      "target_attribution_valid": false,
+      "observed_final_state": {
+        "outer_api_http_status": 200,
+        "workflow_status": "succeeded",
+        "total_steps": 3,
+        "http_node_returned_status_code": 504,
+        "effect_attempts": [
+          1
+        ]
+      },
+      "observation": "Killing the Celery worker did not interrupt this run because the Published API blocking path executed in the API process. The HTTP node later exposed a Squid read-timeout 504 as output and the no-error-strategy workflow succeeded.",
+      "does_not_prove": [
+        "Celery worker crash recovery behavior",
+        "Broker redelivery behavior",
+        "Redis visibility timeout behavior",
+        "Recovery from killing the actual blocking API executor"
+      ]
+    },
+    {
+      "name": "published_streaming_success_control",
+      "input_key": "pub-stream-control-002",
+      "workflow_run_id": "b4ca02b4-d0ac-47a4-ab0b-dd18258ed4e2",
+      "response_mode": "streaming",
+      "executor_attribution_valid": true,
+      "observed_final_state": {
+        "outer_api_http_status": 200,
+        "workflow_status": "succeeded",
+        "total_steps": 3,
+        "http_node_returned_status_code": 200,
+        "effect_attempts": [
+          1
+        ]
+      },
+      "observation": "The exact run was received by workflow_based_app_execution_task in the Celery worker and completed normally, validating the streaming execution path before fault injection.",
+      "does_not_prove": [
+        "Celery worker crash recovery behavior",
+        "Broker redelivery behavior",
+        "Exactly-once side-effect semantics"
+      ]
+    },
+    {
+      "name": "published_streaming_worker_kill_after_effect",
+      "input_key": "pub-stream-worker-crash-001",
+      "workflow_run_id": "28e83e19-b8af-4344-8421-0b887b27712a",
+      "response_mode": "streaming",
+      "executor_attribution_valid": true,
+      "fault": {
+        "target": "The worker container whose active Celery task contained the exact workflow run id",
+        "exit_code": 137,
+        "effect_was_fsynced_before_kill": true
+      },
+      "active_task_and_runtime": {
+        "acknowledged": true,
+        "redelivered": false,
+        "task_acks_late_effective": false,
+        "task_reject_on_worker_lost_effective": false
+      },
+      "broker_observation": {
+        "queue_len_before_kill": 0,
+        "unacked_before_kill": 0,
+        "queue_len_after_kill": 0,
+        "unacked_after_kill": 0,
+        "queue_len_after_restart": 0,
+        "unacked_after_restart": 0,
+        "redis_visibility_timeout_applicable": false,
+        "reason": "The active task was already acknowledged before the worker was killed."
+      },
+      "bounded_final_observation": {
+        "observation_window": "Approximately three minutes after the worker kill",
+        "workflow_status": "running",
+        "total_steps": 0,
+        "node_statuses": {
+          "start": "succeeded",
+          "effect": "running"
+        },
+        "effect_attempts": [
+          1
+        ],
+        "automatic_redelivery_observed": false,
+        "application_level_convergence_observed": false,
+        "terminal_sse_event_received": false
+      },
+      "observation": "In this single Dify 1.16.1 Published API streaming run, the real executor was hard-killed after one persisted side effect. The early-acknowledged task had no broker delivery left to recover, and the restarted worker neither redelivered the task nor converged the stale database run during the bounded observation window.",
+      "does_not_prove": [
+        "That no separate long-delay reconciler can ever act",
+        "Behavior with task_acks_late=true or task_reject_on_worker_lost=true",
+        "Behavior in a multi-worker or production deployment",
+        "Exactly-once side-effect semantics"
+      ]
+    }
+  ],
+  "key_finding": "Published API response_mode changes the executor boundary in Dify 1.16.1. The streaming Celery task is early-acknowledged by default in the measured runtime, so killing its worker after an external side effect can leave one applied effect and a stale running workflow with no Redis visibility-timeout recovery trigger.",
+  "runtime_notes": [
+    "The old debugger evidence remains in evidence/dify-semantics-report.json and evidence/dify-raw-snapshot.json and was not overwritten.",
+    "One invalid streaming control attempt was excluded after a Docker bridge firewall-rule problem was proven and repaired; a new key was used for every valid rerun.",
+    "The original Ubuntu runtime was briefly started during isolation preflight. An immediate operator read-only observation found no old run or effect change before it was stopped, but that intermediate check was not independently archived; the committed historical evidence files were not changed.",
+    "This is a local framework benchmark, not production experience or a production reliability guarantee."
+  ],
+  "single_next_experiment": "In the isolated stack only, configure the workflow execution task for late ACK plus reject-on-worker-lost, set and record an explicit bounded Redis broker visibility_timeout, verify the effective task and broker transport settings, and repeat the exact Published API streaming fault with an observation window that crosses that timeout to measure whether redelivery recovers, duplicates the side effect, or remains uncertain."
+}
