@@ -1,0 +1,373 @@
+{
+  "schema_version": 1,
+  "captured_at_utc": "2026-08-30T02:20:27.0063174Z",
+  "evidence_kind": "sanitized_raw_snapshot",
+  "scope": "Dify 1.16.1 Published Service API streaming execution with an experiment-only late-ACK task annotation, a 120-second Redis visibility timeout, and one whole Celery worker-container hard kill after a persisted external side effect",
+  "provenance": {
+    "runtime_configuration": [
+      "_dify_bench/published-20260828/late-ack-001/environment-runtime.json",
+      "_dify_bench/published-20260828/late-ack-001/runtime-worker.txt",
+      "_dify_bench/published-20260828/late-ack-001/runtime-api.txt",
+      "_dify_bench/published-20260828/late-ack-001/runtime-worker-remote-conf.json"
+    ],
+    "rollback_configuration": "_dify_bench/published-20260828/late-ack-001/runtime-worker-after-rollback.txt",
+    "control_snapshots": [
+      "_dify_bench/published-20260828/late-ack-001/control-002-blocked.json",
+      "_dify_bench/published-20260828/late-ack-001/control-002-final.json",
+      "_dify_bench/published-20260828/late-ack-001/control-002-client.json"
+    ],
+    "fault_snapshots": [
+      "_dify_bench/published-20260828/late-ack-001/fault-001-before-kill.json",
+      "_dify_bench/published-20260828/late-ack-001/fault-001/fault-transcript.txt",
+      "_dify_bench/published-20260828/late-ack-001/fault-001-after-due-30s.json",
+      "_dify_bench/published-20260828/late-ack-001/fault-001-redelivered-before-release.json",
+      "_dify_bench/published-20260828/late-ack-001/fault-001-final.json",
+      "_dify_bench/published-20260828/late-ack-001/fault-001-client.json"
+    ],
+    "effect_events": "Exact parsed records from the ignored sink events.jsonl file are transcribed into the case snapshots and this sanitized file.",
+    "workflow_rows": "Read-only PostgreSQL queries against the isolated Compose database are transcribed in the structured snapshots.",
+    "broker_snapshots": "Read-only Redis DB 1 queue, unacked hash, unacked index, delivery payload, task id, delivery tag, redelivery flag, and visibility score observations are transcribed in the structured snapshots.",
+    "credential_handling": "No Published App token, Redis password, database password, session cookie, or authorization header is retained in this file."
+  },
+  "environment": {
+    "dify_version": "1.16.1",
+    "dify_source_commit": "5456d4d56e5701999bc8da2a2c97f5ae9b3b78d3",
+    "deployment": "Docker Compose in dedicated WSL distribution DifyBench-Isolated-20260828",
+    "compose_project": "dify_pub_20260828",
+    "docker_server_version": "29.1.3",
+    "celery_version": "5.6.3",
+    "kombu_version": "5.6.2",
+    "api_and_worker_image_id": "sha256:48295be2027d55f7791231c32b1e585a03eed42e3f88d014ae39ee15eb6362cb",
+    "compose_default_network_id": "b346a4c948eae36bf56713e561041889d1ddfeb62e05f19679fd71cdd1e1febe",
+    "compose_default_subnet": "172.27.0.0/16",
+    "streaming_client_entrypoint": "http://api:5001 inside the Compose network",
+    "effect_sink": "guarded_loop.dify_sink",
+    "models_or_external_api_keys_required": false
+  },
+  "published_app": {
+    "app_id": "4a820f63-bd4b-47dd-9854-f36751116d8e",
+    "workflow_id": "249f4342-8fd8-4def-a464-15ee54426e6e",
+    "dsl": "dify/http-no-retry.yml",
+    "api_token_value_archived": false
+  },
+  "source_semantics": {
+    "dify_task": {
+      "path": "api/tasks/app_generate/workflow_execute_task.py",
+      "lines": "471-480",
+      "revision_url": "https://github.com/langgenius/dify/blob/5456d4d56e5701999bc8da2a2c97f5ae9b3b78d3/api/tasks/app_generate/workflow_execute_task.py#L471-L480",
+      "observation": "workflow_based_app_execution_task is the shared Celery task measured by the streaming cases."
+    },
+    "dify_celery_extension": {
+      "revision_url": "https://github.com/langgenius/dify/blob/5456d4d56e5701999bc8da2a2c97f5ae9b3b78d3/api/extensions/ext_celery.py",
+      "observation": "The experiment overlay was copied from this fixed revision before adding the bounded transport settings."
+    },
+    "dify_worker_entrypoint": {
+      "revision_url": "https://github.com/langgenius/dify/blob/5456d4d56e5701999bc8da2a2c97f5ae9b3b78d3/api/docker/entrypoint.sh#L32-L54",
+      "celery_entrypoint_url": "https://github.com/langgenius/dify/blob/5456d4d56e5701999bc8da2a2c97f5ae9b3b78d3/api/celery_entrypoint.py",
+      "observation": "The worker pool defaults to gevent and celery_entrypoint.py patches gevent-related libraries; the measured Dummy-* execution context does not prove a separately killable OS pool child."
+    },
+    "celery_task_settings": {
+      "documentation_url": "https://docs.celeryq.dev/en/v5.6.0/userguide/configuration.html#task-acks-late",
+      "observation": "Late ACK moves acknowledgment until after task execution; reject-on-worker-lost is a separate setting."
+    },
+    "celery_redis_visibility_timeout": {
+      "documentation_url": "https://docs.celeryq.dev/en/v5.6.2/getting-started/backends-and-brokers/redis.html#visibility-timeout",
+      "observation": "Celery documents the broker, result-backend, and global visibility timeout settings and warns that force-killed workers may wait for visibility timeout before redelivery."
+    },
+    "kombu_redis_restoration": {
+      "source_url": "https://github.com/celery/kombu/blob/v5.6.2/kombu/transport/redis.py#L335-L430",
+      "observation": "Kombu tracks Redis unacked deliveries and implements visibility restoration; runtime task id and redelivered evidence remain the experiment's recovery criterion."
+    }
+  },
+  "experimental_override": {
+    "scope": "Only tasks.app_generate.workflow_execute_task.workflow_based_app_execution_task was annotated for late ACK and reject-on-worker-lost.",
+    "task_annotation": {
+      "acks_late": true,
+      "reject_on_worker_lost": true
+    },
+    "visibility_timeout_seconds": 120,
+    "mount": "A read-only experiment-local ext_celery.py overlay was mounted into api, api_websocket, worker, and worker_beat; no Dify source checkout or image layer was modified.",
+    "image_ext_celery_sha256": "b380fb2194f6e0e4251ec6b9fe0d0f04c6cc2307e2ee35aa8ef0523f6ddc4ad7",
+    "overlay_ext_celery_sha256": "6ec8bfb1f47be09efda9d1c6dcef0e3e17f8706e5d5c4007432f75e98931ddcc",
+    "compose_override_sha256": "98d7a823f30aae1e2e102e992fb042681fde2bb7dd768499d9fa2100fcbf279c"
+  },
+  "effective_runtime": {
+    "task_name": "tasks.app_generate.workflow_execute_task.workflow_based_app_execution_task",
+    "api_and_worker_agreed": true,
+    "task_acks_late_global": false,
+    "task_acks_late_effective": true,
+    "task_reject_on_worker_lost_global": false,
+    "task_reject_on_worker_lost_effective": true,
+    "task_acks_on_failure_or_timeout_effective": true,
+    "task_ignore_result": true,
+    "worker_prefetch_multiplier_from_app_config": 4,
+    "broker_transport_options": {
+      "visibility_timeout": 120
+    },
+    "result_backend_transport_options": {
+      "visibility_timeout": 120
+    },
+    "global_visibility_timeout": 120,
+    "live_redis_channel": {
+      "channel_class": "kombu.transport.redis.Channel",
+      "ack_emulation": true,
+      "visibility_timeout": 120,
+      "unacked_key": "unacked",
+      "unacked_index_key": "unacked_index"
+    }
+  },
+  "effect_events": [
+    {
+      "input_key": "pub-lateack-control-002",
+      "attempt": 1,
+      "applied_at_epoch": 1788054703.5381799
+    },
+    {
+      "input_key": "pub-lateack-worker-crash-001",
+      "attempt": 1,
+      "applied_at_epoch": 1788054892.1875637
+    },
+    {
+      "input_key": "pub-lateack-worker-crash-001",
+      "attempt": 2,
+      "applied_at_epoch": 1788055753.2998235
+    }
+  ],
+  "invalidated_attempts": [
+    {
+      "input_key": "pub-lateack-control-001",
+      "classification": "invalid_client_invocation",
+      "client_exit_code": 3,
+      "workflow_run_created": false,
+      "celery_task_observed": false,
+      "effect_count": 0,
+      "queue_len": 0,
+      "unacked_hlen": 0,
+      "reason": "The client container was launched without overriding the Dify image entrypoint, so the image attempted its normal application startup instead of running the client. This is an invocation error, not Dify behavior."
+    }
+  ],
+  "cases": {
+    "late_ack_streaming_control": {
+      "input_key": "pub-lateack-control-002",
+      "response_mode": "streaming",
+      "workflow_run_id": "50d423a5-8928-4c0b-8d51-ff441ca10d77",
+      "celery_task_id": "c43a005d-0a6f-45a7-be93-1dca5bcd4560",
+      "blocked_snapshot": {
+        "captured_at_utc": "2026-08-30T01:51:59.051143+00:00",
+        "active_task_acknowledged": false,
+        "active_task_redelivered": false,
+        "routing_key": "workflow_based_app_execution",
+        "effect_attempts": [
+          1
+        ],
+        "queue_len": 0,
+        "unacked_hlen": 1,
+        "unacked_index_zcard": 1,
+        "delivery_tag": "e1bde452-e2a8-422f-835f-791ecd4760b8",
+        "delivery_score_epoch": 1788054703.1924367,
+        "visibility_due_epoch": 1788054823.1924367,
+        "seconds_before_visibility_due": 104.1412937
+      },
+      "released_at_utc": "2026-08-30T01:52:55.4202789Z",
+      "client": {
+        "outer_http_status": 200,
+        "elapsed_seconds": 68.75694783800009,
+        "terminal_sse_event_received": true
+      },
+      "final": {
+        "workflow_status": "succeeded",
+        "total_steps": 3,
+        "effect_attempts": [
+          1
+        ],
+        "queue_len": 0,
+        "unacked_hlen": 0,
+        "matching_active_tasks": 0
+      },
+      "classification": "valid_late_ack_success_control",
+      "proves": "The task-specific annotation and Redis visibility settings were effective on the measured streaming path, the active task remained unacknowledged while blocked, and a normal release completed once and removed the unacked delivery.",
+      "does_not_prove": [
+        "Worker-loss recovery",
+        "Exactly-once side-effect semantics",
+        "Visibility-timeout restoration latency"
+      ]
+    },
+    "late_ack_whole_worker_container_kill_after_effect": {
+      "input_key": "pub-lateack-worker-crash-001",
+      "response_mode": "streaming",
+      "workflow_run_id": "60735576-5639-4d54-b4fe-8d2b7435bbcb",
+      "celery_task_id": "07e0be97-162f-458a-ac81-1a2bb6eca57c",
+      "original_delivery": {
+        "delivery_tag": "cb906495-b46b-4519-9cb6-cba44a663f6d",
+        "delivery_score_epoch": 1788054892.1543906,
+        "visibility_due_epoch": 1788055012.1543906,
+        "active_task_acknowledged": false,
+        "active_task_redelivered": false,
+        "effect_attempts_before_kill": [
+          1
+        ],
+        "queue_len": 0,
+        "unacked_hlen": 1,
+        "unacked_index_zcard": 1
+      },
+      "fault_injection": {
+        "target_attribution_valid": true,
+        "worker_container_id": "c4bfee1f2fe6553c204aa08a5866b8ebba7dbc57c0fb506f63d8fef10ca32747",
+        "restart_policy_before": "always",
+        "restart_policy_during_fault": "no",
+        "kill_started_at_utc": "2026-08-30T01:56:22.259537002Z",
+        "kill_finished_at_utc": "2026-08-30T01:56:23.869977307Z",
+        "container_finished_at_utc": "2026-08-30T01:56:23.498741327Z",
+        "exit_code": 137,
+        "after_kill_queue_len": 0,
+        "after_kill_unacked_hlen": 1,
+        "explicit_restart_started_at_utc": "2026-08-30T01:56:29.097688778Z",
+        "worker_started_at_utc": "2026-08-30T01:56:32.291086328Z",
+        "worker_ready_log_at_utc": "2026-08-30T01:56:48.422Z",
+        "after_restart_snapshot_at_utc": "2026-08-30T01:56:51.541142312Z",
+        "after_restart_queue_len": 0,
+        "after_restart_unacked_hlen": 1,
+        "restart_policy_restored": "always"
+      },
+      "bounded_observation_after_visibility_due": {
+        "structured_snapshot_at_utc": "2026-08-30T01:58:19.777075+00:00",
+        "structured_snapshot_seconds_after_due": 87.6226844,
+        "workflow_status": "running",
+        "total_steps": 0,
+        "effect_attempts": [
+          1
+        ],
+        "matching_active_tasks": 0,
+        "queue_len": 0,
+        "unacked_hlen": 1,
+        "operator_observation_at_utc": "2026-08-30T02:00:31.101077692Z",
+        "operator_observation_seconds_after_due": 218.9466871,
+        "operator_observation": "The run was still running with one effect, queue_len=0, unacked_hlen=1, and no matching redelivery log.",
+        "operator_observation_evidence_class": "operator_terminal_observation_not_independently_archived"
+      },
+      "external_interruption": {
+        "classification": "observation_discontinuity",
+        "description": "The active Codex turn was interrupted, its keeper process ended, and the isolated WSL distribution was stopped. Continuous observation therefore ended after the operator observation and must not be inferred across the gap.",
+        "resume_recorded_at_utc": "2026-08-30T02:08:42.3905422Z",
+        "original_streaming_client_finished_at_utc": "2026-08-30T02:01:16.355590+00:00",
+        "original_streaming_client_outer_http_status": 200,
+        "original_streaming_client_elapsed_seconds": 356.445655066,
+        "original_streaming_client_terminal_event_received": false,
+        "original_streaming_client_event_sequence": [
+          "workflow_started",
+          "node_started:start",
+          "node_finished:start",
+          "node_started:effect"
+        ]
+      },
+      "cold_start_redelivery": {
+        "worker_started_at_utc": "2026-08-30T02:08:48.079184763Z",
+        "worker_ready_log_at_utc": "2026-08-30T02:09:12.766Z",
+        "same_task_received_at_utc": "2026-08-30T02:09:12.771Z",
+        "same_task_id": true,
+        "task_id": "07e0be97-162f-458a-ac81-1a2bb6eca57c",
+        "active_task_acknowledged": false,
+        "active_task_redelivered": true,
+        "redis_payload_redelivered": true,
+        "delivery_tag": "cb906495-b46b-4519-9cb6-cba44a663f6d",
+        "delivery_tag_reused": true,
+        "new_delivery_score_epoch": 1788055752.770209,
+        "second_effect_applied_epoch": 1788055753.2998235,
+        "effect_attempts_before_release": [
+          1,
+          2
+        ],
+        "queue_len": 0,
+        "unacked_hlen": 1
+      },
+      "released_at_utc": "2026-08-30T02:11:04.8576659Z",
+      "final": {
+        "workflow_status": "succeeded",
+        "total_steps": 3,
+        "finished_at": "2026-08-30T02:11:06.628043",
+        "effect_attempts": [
+          1,
+          2
+        ],
+        "queue_len": 0,
+        "unacked_hlen": 0,
+        "matching_active_tasks": 0,
+        "node_rows": [
+          {
+            "attempt": "original",
+            "node_id": "start",
+            "status": "succeeded"
+          },
+          {
+            "attempt": "redelivery",
+            "node_id": "start",
+            "status": "succeeded"
+          },
+          {
+            "attempt": "original",
+            "node_id": "effect",
+            "status": "running",
+            "finished_at": null
+          },
+          {
+            "attempt": "redelivery",
+            "node_id": "effect",
+            "status": "succeeded"
+          },
+          {
+            "attempt": "redelivery",
+            "node_id": "end",
+            "status": "succeeded"
+          }
+        ]
+      },
+      "classification": "duplicate",
+      "recovery_attribution": "The same Celery task id was received with redelivered=true after the expired Redis unacked delivery survived the whole-container loss and a later cold worker start. This proves broker redelivery in this case. It does not isolate reject-on-worker-lost because no Celery parent survived the whole-container kill.",
+      "does_not_prove": [
+        "Exactly-once side-effect semantics",
+        "Redelivery exactly 120 seconds after initial delivery",
+        "Continuous Kombu restore cadence during the externally interrupted interval",
+        "Immediate reject-on-worker-lost behavior",
+        "Production, cluster, or other workflow behavior"
+      ]
+    }
+  },
+  "derived_assertions": {
+    "configuration_gate_passed": true,
+    "control_effect_exactly_once": true,
+    "fault_delivery_unacked_before_kill": true,
+    "fault_unacked_survived_container_loss": true,
+    "same_task_id_redelivered": true,
+    "delivery_info_redelivered": true,
+    "side_effect_replayed": true,
+    "final_workflow_converged": true,
+    "exactly_once_preserved": false,
+    "classification": "duplicate",
+    "continuous_timeout_latency_measured": false,
+    "reject_on_worker_lost_isolated": false
+  },
+  "cleanup": {
+    "overlay_removal_and_service_recreate_operator_action_completed": true,
+    "independently_archived_post_rollback_runtime_scope": "worker only",
+    "full_stack_post_rollback_runtime_independently_archived": false,
+    "worker_ext_celery_sha256_after_rollback_operator_observation": "b380fb2194f6e0e4251ec6b9fe0d0f04c6cc2307e2ee35aa8ef0523f6ddc4ad7",
+    "worker_ext_celery_sha256_after_rollback_evidence_class": "operator_terminal_observation_not_independently_archived",
+    "task_acks_late_effective_after_rollback": false,
+    "task_reject_on_worker_lost_effective_after_rollback": false,
+    "broker_transport_options_after_rollback": {},
+    "result_backend_transport_options_after_rollback": {},
+    "global_visibility_timeout_after_rollback": null,
+    "live_redis_channel_visibility_timeout_after_rollback": 3600,
+    "original_ubuntu_state": "stopped",
+    "isolated_dify_distribution_state": "stopped",
+    "data_deleted": false
+  },
+  "interpretation_limits": [
+    "The fault case is one local Dify 1.16.1 run with one whole worker container, one published workflow, one Redis broker, and an experiment-only task annotation.",
+    "Late ACK improved broker-level recoverability relative to the separately recorded early-ACK fault, but it duplicated a non-idempotent external side effect; recoverability and exactly-once execution are independent properties.",
+    "The final Dify run status was succeeded and total_steps was 3, but one original effect node row remained running while the redelivery created a second start/effect path. Final status alone is not sufficient recovery evidence.",
+    "The external interruption prevents a claim about exact visibility-timeout latency or continuous restore cadence. The strongest supported timing claim is that the expired unacked delivery persisted and the same task was redelivered on a later cold worker start.",
+    "No production deployment, multi-worker cluster, scheduled task, model provider, real user traffic, child-process-only loss, or API executor crash was tested.",
+    "The measured default gevent worker did not establish a separately killable OS pool child. A future prefork feasibility/control slice would add a new execution-pool variable and must pass a normal control before any child-kill fault."
+  ]
+}

@@ -1,0 +1,119 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-08-30",
+  "evidence_kind": "curated_summary",
+  "raw_snapshot": "evidence/dify-published-late-ack-raw.json",
+  "prior_early_ack_report": "evidence/dify-published-crash-report.json",
+  "environment": {
+    "dify_version": "1.16.1",
+    "dify_source_commit": "5456d4d56e5701999bc8da2a2c97f5ae9b3b78d3",
+    "deployment": "Isolated local Docker Compose stack in DifyBench-Isolated-20260828",
+    "published_app_id": "4a820f63-bd4b-47dd-9854-f36751116d8e",
+    "workflow_id": "249f4342-8fd8-4def-a464-15ee54426e6e"
+  },
+  "measured_configuration": {
+    "scope": "Experiment-only annotation for workflow_based_app_execution_task",
+    "task_acks_late_effective": true,
+    "task_reject_on_worker_lost_effective": true,
+    "broker_visibility_timeout_seconds": 120,
+    "result_backend_visibility_timeout_seconds": 120,
+    "global_visibility_timeout_seconds": 120,
+    "live_redis_channel_visibility_timeout_seconds": 120,
+    "baseline_restored_after_experiment": true,
+    "independently_archived_post_rollback_runtime_scope": "worker only"
+  },
+  "cases": [
+    {
+      "name": "late_ack_streaming_success_control",
+      "input_key": "pub-lateack-control-002",
+      "workflow_run_id": "50d423a5-8928-4c0b-8d51-ff441ca10d77",
+      "celery_task_id": "c43a005d-0a6f-45a7-be93-1dca5bcd4560",
+      "pre_release": {
+        "active_task_acknowledged": false,
+        "redis_unacked": 1,
+        "effect_attempts": [
+          1
+        ]
+      },
+      "observed_final_state": {
+        "outer_api_http_status": 200,
+        "terminal_sse_event_received": true,
+        "workflow_status": "succeeded",
+        "total_steps": 3,
+        "effect_attempts": [
+          1
+        ],
+        "redis_unacked": 0
+      },
+      "classification": "valid_control",
+      "observation": "The measured task remained unacknowledged while its HTTP effect was blocked, then completed once and acknowledged normally after release."
+    },
+    {
+      "name": "late_ack_whole_worker_container_kill_after_effect",
+      "input_key": "pub-lateack-worker-crash-001",
+      "workflow_run_id": "60735576-5639-4d54-b4fe-8d2b7435bbcb",
+      "celery_task_id": "07e0be97-162f-458a-ac81-1a2bb6eca57c",
+      "fault": {
+        "target": "The whole worker container whose active unacknowledged task contained the exact workflow run id",
+        "effect_was_fsynced_before_kill": true,
+        "exit_code": 137,
+        "redis_unacked_before_kill": 1,
+        "redis_unacked_after_kill": 1,
+        "redis_unacked_after_first_restart": 1
+      },
+      "bounded_pre_interruption_observation": {
+        "expired_delivery_still_unacked": true,
+        "second_effect_observed": false,
+        "application_convergence_observed": false,
+        "latest_operator_observation_evidence_class": "operator_terminal_observation_not_independently_archived"
+      },
+      "observation_discontinuity": "The isolated WSL runtime was externally stopped and later resumed, so no exact 120-second redelivery-latency claim is made.",
+      "cold_start_redelivery": {
+        "same_task_id": true,
+        "active_task_redelivered": true,
+        "redis_payload_redelivered": true,
+        "delivery_tag_reused": true,
+        "effect_attempts_before_release": [
+          1,
+          2
+        ]
+      },
+      "observed_final_state": {
+        "workflow_status": "succeeded",
+        "total_steps": 3,
+        "effect_attempts": [
+          1,
+          2
+        ],
+        "original_effect_node_status": "running",
+        "redelivered_effect_node_status": "succeeded",
+        "redis_unacked": 0,
+        "original_client_terminal_sse_event_received": false
+      },
+      "classification": "duplicate",
+      "observation": "The expired Redis unacked delivery survived whole-container loss. On a later cold worker start, the same Celery task id was received with redelivered=true and applied the external effect a second time before the run eventually succeeded.",
+      "does_not_prove": [
+        "Exactly-once execution",
+        "Redelivery exactly at the configured 120-second timeout",
+        "Immediate reject-on-worker-lost behavior",
+        "Production or multi-worker behavior"
+      ]
+    }
+  ],
+  "invalidated_attempts": [
+    {
+      "input_key": "pub-lateack-control-001",
+      "reason": "Incorrect client-container entrypoint; no workflow run, task, broker delivery, or effect was created.",
+      "excluded_from_framework_conclusions": true
+    }
+  ],
+  "key_finding": "In this local Dify 1.16.1 Published streaming case, late ACK preserved a broker recovery path that the separately measured early-ACK default did not have. That recovery replayed the whole workflow task and duplicated a non-idempotent external side effect. Broker recoverability therefore did not provide exactly-once execution.",
+  "runtime_notes": [
+    "A read-only experiment overlay changed only the target task annotation and the three Celery Redis visibility-timeout settings; effective API, worker, remote-worker, and live-channel values were captured before the run.",
+    "The overlay was removed and related services were recreated after evidence capture. The retained post-rollback runtime snapshot independently reverifies the worker's default early-ACK and transport settings; equivalent post-rollback runtime snapshots for API, websocket, and beat were not archived. Restoration of the original ext_celery.py hash was an operator terminal observation that was not independently archived. Both WSL distributions were left stopped without deleting retained data.",
+    "Whole-container loss removed the Celery parent process, so this run is attributed to Redis broker restoration on cold worker start and does not isolate task_reject_on_worker_lost.",
+    "The fixed Dify worker entrypoint defaults to gevent, and the measured Dummy-* execution context did not establish a separately killable OS pool child. A prefork variant would be a new experiment variable.",
+    "This is a local framework benchmark, not production experience or a production reliability guarantee."
+  ],
+  "single_next_experiment": "In the isolated stack only, run a no-fault prefork feasibility and normal-control slice first. Explicitly set prefork with concurrency 1, retain the exact-task late-ACK annotation, use a visibility timeout longer than the control window, archive final worker argv, pool stats, the OS parent/child tree, and the exact task child PID, then prove a new blocking/release streaming control succeeds once and clears unacked state. Treat the pool change and Dify's gevent-patched celery_entrypoint as new variables. Stop without fault injection if a real child is absent or the control is unstable; only a later slice may kill the exact child to isolate reject-on-worker-lost."
+}

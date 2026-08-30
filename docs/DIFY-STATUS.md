@@ -1,15 +1,17 @@
 # Dify 对照实验状态
 
-**状态：Dify 1.16.1 的两个本地实验切片已经闭合。** 2026-08-04 的 debugger 草稿覆盖
+**状态：Dify 1.16.1 的三个本地实验切片已经闭合。** 2026-08-04 的 debugger 草稿覆盖
 HTTP 重试、Human Input、API 重启和一次 worker 硬崩溃；2026-08-28 的独立 Published API
-数据栈补了 `blocking` / `streaming` executor attribution，以及 exact active Celery task 的硬崩溃。
+数据栈补了 `blocking` / `streaming` executor attribution 与默认 early-ACK task 的硬崩溃；2026-08-30
+又在同一隔离栈里完成一个 experiment-only late-ACK 对照。
 结果见根目录 `README.md`。debugger 的结构化记录在 `evidence/dify-semantics-report.json` 与
 `evidence/dify-raw-snapshot.json`；Published API 记录在 `evidence/dify-published-crash-report.json`
-与 `evidence/dify-published-crash-raw.json`。
+与 `evidence/dify-published-crash-raw.json`；late-ACK 记录在
+`evidence/dify-published-late-ack-report.json` 与 `evidence/dify-published-late-ack-raw.json`。
 
 ## 环境
 
-| 项 | debugger 草稿（2026-08-04） | Published API（2026-08-28） |
+| 项 | debugger 草稿（2026-08-04） | Published API（2026-08-28 / 30） |
 |---|---|---|
 | 运行位置 | WSL `Ubuntu`；Docker 28.2.2 + Compose v2.29.7 | 独立 WSL `DifyBench-Isolated-20260828`；Docker 29.1.3 + Compose v2.29.7 |
 | Dify 源码 | WSL 内 `~/dify` | 1.16.1，commit `5456d4d56e5701999bc8da2a2c97f5ae9b3b78d3` |
@@ -58,6 +60,8 @@ Published App id 为 `4a820f63-bd4b-47dd-9854-f36751116d8e`，workflow id 为
 | `pub-worker-crash-001` | `blocking`；effect 后杀 Celery worker | `succeeded` / 3 steps；HTTP node 504 | 1 | **未命中 executor**，只算 attribution control |
 | `pub-stream-control-002` | `streaming` 正常控制 | `succeeded` / 3 steps | 1 | exact run 进入 Celery task |
 | `pub-stream-worker-crash-001` | `streaming`；effect 后杀 exact active worker | 约 3 分钟快照仍 `running` / 0 steps | 1 | worker log + `celery inspect active` 双重命中 |
+| `pub-lateack-control-002` | experiment-only late ACK；`streaming` 正常控制 | `succeeded` / 3 steps | 1 | 阻塞时 `acknowledged=false`、Redis `unacked=1` |
+| `pub-lateack-worker-crash-001` | experiment-only late ACK；effect 后杀整个 exact active worker 容器 | 冷启动重投后 `succeeded` / 3 steps | **2** | same task id + `redelivered=true`；判定 `duplicate` |
 
 关键解释：
 
@@ -72,7 +76,17 @@ Published App id 为 `4a820f63-bd4b-47dd-9854-f36751116d8e`，workflow id 为
   `acknowledged=true`。运行时 effective `task_acks_late=false`、`task_reject_on_worker_lost=false`，
   kill 前/后/重启后 Redis queue 与 unacked 都为 0，所以 visibility timeout 对这条已确认 delivery
   不构成恢复入口。约 3 分钟内没有第二次 effect，也没有把 run 从 `running` 收敛到终态。
-- 两条崩溃结果都是单次、有时限的本地观察，不是 Dify 所有部署的恢复保证。
+- late-ACK 对照用 read-only `ext_celery.py` overlay，只对 exact workflow task 设置 effective
+  `acks_late=true`、`reject_on_worker_lost=true`；broker、result backend、global 与 live Redis
+  channel 的 transport-wide visibility timeout 均实测为 120 秒。正常控制在释放前保留一个 unacked delivery，
+  释放后 effect 仍为 1 次且 unacked 清零。
+- late-ACK fault 在 attempt 1 落盘后命中 exact active worker，active task 为 `acknowledged=false`；
+  容器 exit 137 后 Redis delivery 仍在。外部暂停打断了连续 timeout 观察，因此不能断言 120 秒准时恢复。
+  后续冷启动时同一 task id 以 `redelivered=true` 收到并产生 attempt 2；最终 run 虽为 `succeeded`，
+  但原 effect node row 仍为 `running`，应用层判定必须是 `duplicate`。
+- whole-container kill 没有留下 Celery parent 来执行即时 reject；本轮证明的是 Redis broker restoration，
+  没有隔离证明 `reject_on_worker_lost`。三条 worker 崩溃结果都是本地单次、有界观察，不是 Dify 所有
+  部署的恢复保证。
 
 ## 本地复现要点
 
@@ -103,6 +117,7 @@ Published fault 的 kill 前硬门槛比旧实验更严格：
 3. worker log 必须含 exact `workflow_run_id`。
 4. `celery inspect active` 必须同时显示 exact run、目标 task、目标 hostname 与 `acknowledged` 状态。
 5. 保存目标 container id、Redis queue/unacked 快照后才允许 kill。
+6. late-ACK 变体还要把 exact task id、delivery tag、visibility score / due 与 redelivery flag 对齐保存。
 
 隔离栈第一次建网后曾出现 Docker `FORWARD` 默认 `DROP`、但新 bridge 未进入 `DOCKER-FORWARD`
 规则的问题：DNS 能解析，新的 Redis TCP 连接却超时。`pub-stream-control-001` 因此被判无效；它没有
@@ -110,16 +125,31 @@ DB run、Celery task 或 sink event。只重启隔离发行版内 Docker daemon 
 Redis `PONG`、API healthy 和 worker ready，再用新 key 跑出有效 control / fault。不要把这个环境故障
 算成 Dify 行为。
 
+late-ACK 配置不是对 Dify checkout 或 image 的持久修改：实验 overlay 从镜像内同 revision 文件复制，
+只增加 task annotation 与 Celery Redis 的三处 120 秒 timeout，随后以 read-only bind mount 注入 API / worker
+相关服务。操作者在证据收集后不带 override 重建了相关服务；保留的 post-rollback runtime 快照只对
+worker 独立验证 effective `acks_late=false`、`reject_on_worker_lost=false`、空 transport options 和
+live channel 默认 3600 秒。原 `ext_celery.py` hash 恢复只保留了操作者终端观察，没有单独归档；也不能
+把 worker 快照扩写成四类服务都有独立归档的回滚证明。
+`pub-lateack-control-001` 因 client container entrypoint 错误被判无效；它没有创建 run、task 或 effect，
+也没有 Redis queue/unacked，不能算作框架行为。
+
 ## 仍需注意
 
 - `crash-worker-001` 是有意留下的悬挂运行，用来保存崩溃证据；不是待恢复的业务任务。
 - `pub-stream-worker-crash-001` 也有意保留为隔离 DB 中的悬挂 run；不要手工改成终态或重放。
+- `pub-lateack-worker-crash-001` 已经由 broker 重投并收敛为 `succeeded`，但 sink 有两个 attempt，且
+  数据库保留原 `running` effect row；不要把终态成功解释为 exactly-once，也不要手工清理证据行。
 - HITL 重启前的 `paused / total_steps=2 / sink=0` 只保留了操作者观察，没有中间原始截图或查询 transcript；
   可独立复核的是表单创建、API 新进程启动、提交、effect 和最终状态的时间线。
 - 旧 debugger worker 的精确 kill 时刻没有归档；新 Published fault 已保存 marker、active task、
   精确 kill / restart 时间、exit 137 与三阶段 Redis 快照。
 - 三个 DSL 的 key 只用于实验 token，限定为 `[A-Za-z0-9_.-]{1,120}`；没有验证任意文本的 JSON escaping。
-- Published API 已覆盖一次 `blocking` attribution control、一次 `streaming` 正常 control 和一次
-  exact active worker crash；没有覆盖 late ACK / reject-on-worker-lost 变体、集群 worker、定时任务、
-  API executor crash 或更长时间的应用层 reconciliation。
+- Published API 已覆盖 `blocking` attribution、`streaming` 正常 control、默认 early-ACK whole-worker
+  crash，以及一次 experiment-only late-ACK whole-worker crash；没有覆盖仅杀 Celery pool child 来隔离
+  `reject_on_worker_lost`、集群 worker、定时任务、API executor crash、生产流量或连续在线的 timeout
+  redelivery latency 测量。
+- 固定 revision 的 worker entrypoint 默认 pool 是 `gevent`，本轮 task 日志也是 `Dummy-*` 上下文；没有
+  证据表明现有拓扑有可单杀的 OS child。任何 prefork control 都是新增实验变量，必须先独立验证正常路径，
+  不能直接把下一次 fault 称为同配置复现。
 - sink 无认证，只能用于本机受控实验，不应暴露到公网。

@@ -1,7 +1,7 @@
 # Resume evidence index
 
 > **Status: current derived job-application view, reviewed against retained
-> evidence on 2026-08-28.** This is not a final resume or production record.
+> evidence on 2026-08-30.** This is not a final resume or production record.
 
 | ID | Highlight | Evidence scope |
 | --- | --- | --- |

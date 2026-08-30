@@ -22,7 +22,7 @@
 | `docs/career/` | 按 JD 选取的项目证据，以及教学式协作协议；不替代本页、设计或交接 |
 | `docs/DIFY-STATUS.md` | Dify 1.16.1 对照实验、复现环境与运行状态 |
 | `dify/` | 三个可导入的 Dify DSL：不重试、重试 3 次、人工审批 |
-| `evidence/` | 原始数据：崩溃注入报告、真实模型 trace，以及 Dify debugger / Published API 摘要与脱敏快照 |
+| `evidence/` | 原始数据：崩溃注入报告、真实模型 trace，以及 Dify debugger / Published API early-ACK 与 late-ACK 摘要和脱敏快照 |
 
 ## 跑什么
 
@@ -101,7 +101,9 @@ python -m guarded_loop.llm_run                                          # 真实
 debugger 结论在 `evidence/dify-semantics-report.json`，原始快照在
 `evidence/dify-raw-snapshot.json`；Published API 结论在
 `evidence/dify-published-crash-report.json`，原始快照在
-`evidence/dify-published-crash-raw.json`。可导入 DSL 在 `dify/`。实验 key 限定为
+`evidence/dify-published-crash-raw.json`；late-ACK 对照在
+`evidence/dify-published-late-ack-report.json` 与
+`evidence/dify-published-late-ack-raw.json`。可导入 DSL 在 `dify/`。实验 key 限定为
 `[A-Za-z0-9_.-]{1,120}`，不把任意用户文本直接当作 JSON 测试输入。
 
 ### Debugger 草稿：重试会重做整个 HTTP 节点
@@ -129,6 +131,8 @@ Python thread；`streaming` 分支才把 `workflow_based_app_execution_task` 投
 | `blocking`；effect 后杀 Celery worker | `succeeded` / 3 steps | 1 | 没命中 executor；外层 API 200，HTTP 节点把 Squid 504 当输出 |
 | `streaming` 正常控制 | `succeeded` / 3 steps | 1 | exact run id 出现在 Celery task，证明 streaming 执行边界 |
 | `streaming`；effect 后杀 active worker | 约 3 分钟快照仍 `running` / 0 steps | 1 | task 已确认；无 queue/unacked、无重投、无应用层收敛 |
+| late-ACK `streaming` 正常控制 | `succeeded` / 3 steps | 1 | 阻塞时 task 未确认且 Redis `unacked=1`；释放后正常确认 |
+| late-ACK `streaming`；effect 后杀整个 active worker 容器 | 后续冷启动重投并 `succeeded` / 3 steps | **2** | 同一 task id 以 `redelivered=true` 重投；恢复工作流但重复副作用 |
 
 正式故障样本 `28e83e19-b8af-4344-8421-0b887b27712a` 在 kill 前同时满足三项归因：sink
 已有 `attempt=1`；worker log 含 exact run id；`celery inspect active` 显示该 task 在目标 worker
@@ -141,7 +145,25 @@ queue、`unacked`、`unacked_index` 都为空。
 和 HTTP 节点仍停在 `running`，SSE 客户端没有收到终态。它说明的是这一个配置下没有 broker
 恢复入口，不是 Dify 所有部署永远不会恢复。
 
-三条边界必须一起说：
+2026-08-30 的对照只给这一个 workflow task 加了 effective `acks_late=true` 与
+`reject_on_worker_lost=true`，并把 Celery Redis 的 broker、result backend 与全局
+`visibility_timeout` 都设成 120 秒；API、worker、remote inspect 和 live Redis channel 四层读数一致。
+正常控制在 HTTP effect 阻塞时表现为 `acknowledged=false`、queue 0、`unacked=1`，释放后只执行一次并
+清空 unacked，说明配置确实打到了 Published `streaming` 路径。
+
+故障组在 attempt 1 已 `fsync` 后杀掉整个 active worker 容器，退出码 137；未确认 delivery 在 kill
+前后和首次重启后都保留在 Redis。过期后的一段连续观察中它仍未重投，随后实验宿主被外部暂停，
+所以不能声称“恰好 120 秒恢复”。后来冷启动 worker 时，同一 Celery task id 以
+`redelivered=true` 被 broker 重投，sink 记录 attempt 2；释放后数据库 run 最终 `succeeded`，但原
+effect node row 仍是 `running`，重投生成的 effect row 才成功。判定因此是 **duplicate**，不是
+exactly-once recovery。原 SSE 客户端也没有收到 terminal event。
+
+early ACK 与 late ACK 的差异由此能直接对齐：early ACK 样本在 worker loss 前已没有 broker delivery，
+留下 1 次 effect 与悬挂 run；late ACK 样本保住了 broker recovery path，却把非幂等 effect 做了 2 次。
+**可恢复性与 exactly-once 是两个独立问题。** 整个容器被杀时 Celery parent 也消失，因此这轮能归因于
+Redis broker restoration，不能单独证明 `reject_on_worker_lost` 的即时 requeue 语义。
+
+四条边界必须一起说：
 
 - Dify 的 HTTP 节点确实提供重试和错误处理配置；人工输入节点也提供暂停、表单提交与恢复。
   但重试的单位是整个节点，不替调用方解决副作用幂等。官方 CLI 文档也明确提醒：对可能已开始执行的
@@ -150,6 +172,8 @@ queue、`unacked`、`unacked_index` 都为空。
   14 分 24 秒内没有重复副作用也没有恢复；Published `blocking` 则根本不走该 Celery task。
 - 有效的 Published `streaming` 故障样本证明 early ACK 后没有 Redis delivery 可供 visibility
   timeout 恢复；这描述的是实测配置语义，不是框架缺陷。
+- late-ACK 故障样本证明本次 broker delivery 后来可重投，也证明了重投整个 workflow task 会重复
+  已落盘的非幂等副作用；最终 `succeeded` 不能替代 task id、redelivery flag 和 effect count 证据。
 
 对应官方文档：[HTTP Request](https://docs.dify.ai/en/cloud/use-dify/nodes/http-request)、
 [错误处理](https://docs.dify.ai/en/cloud/use-dify/build/predefined-error-handling-logic)、
@@ -165,6 +189,8 @@ queue、`unacked`、`unacked_index` 都为空。
 - 只覆盖 LangGraph 的 StateGraph / checkpointer / interrupt 三块。
   LangChain 生态里的 RAG、向量库、Agent 预制件我仍然没有用过。
 - 崩溃注入 30 次 × 20 步，规模比我自己项目里那个基准（30 × 100）小。
-- Dify 只覆盖本地 1.16.1 的 debugger 草稿，以及独立 Compose 栈中的单次 Published API
-  `blocking` / `streaming` 对照；没有覆盖集群、定时任务、late-ACK 配置或生产流量。debugger
-  worker 结论只适用于约 14 分 24 秒窗口，Published streaming worker 结论只适用于约 3 分钟窗口。
+- Dify 只覆盖本地 1.16.1 的 debugger 草稿，以及独立 Compose 栈中的单 worker Published API
+  `blocking` / `streaming`、early ACK 和一次 experiment-only late ACK 对照；没有覆盖集群、定时任务、
+  生产流量、只杀 pool child 的 `reject_on_worker_lost` 隔离实验，或连续在线的 timeout 延迟测量。
+  debugger worker 结论只适用于约 14 分 24 秒窗口，early-ACK Published fault 只适用于约 3 分钟窗口；
+  late-ACK fault 的外部暂停边界必须与其冷启动重投结论一起说明。
