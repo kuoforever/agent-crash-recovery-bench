@@ -1,27 +1,37 @@
 # Dify 对照实验状态
 
-**状态：Dify 1.16.1 的三个本地实验切片已经闭合。** 2026-08-04 的 debugger 草稿覆盖
+**状态：Dify 1.16.1 的四个本地实验切片已经闭合。** 2026-08-04 的 debugger 草稿覆盖
 HTTP 重试、Human Input、API 重启和一次 worker 硬崩溃；2026-08-28 的独立 Published API
 数据栈补了 `blocking` / `streaming` executor attribution 与默认 early-ACK task 的硬崩溃；2026-08-30
-又在同一隔离栈里完成一个 experiment-only late-ACK 对照。
+又在同一隔离栈里完成 experiment-only late-ACK whole-container 对照，以及独立的 prefork feasibility +
+no-fault normal-control 切片。
 结果见根目录 `README.md`。debugger 的结构化记录在 `evidence/dify-semantics-report.json` 与
 `evidence/dify-raw-snapshot.json`；Published API 记录在 `evidence/dify-published-crash-report.json`
 与 `evidence/dify-published-crash-raw.json`；late-ACK 记录在
-`evidence/dify-published-late-ack-report.json` 与 `evidence/dify-published-late-ack-raw.json`。
+`evidence/dify-published-late-ack-report.json` 与 `evidence/dify-published-late-ack-raw.json`；prefork
+无故障对照在 `evidence/dify-prefork-control-report.json` 与
+`evidence/dify-prefork-control-raw.json`。
 
 ## 环境
 
 | 项 | debugger 草稿（2026-08-04） | Published API（2026-08-28 / 30） |
 |---|---|---|
 | 运行位置 | WSL `Ubuntu`；Docker 28.2.2 + Compose v2.29.7 | 独立 WSL `DifyBench-Isolated-20260828`；Docker 29.1.3 + Compose v2.29.7 |
-| Dify 源码 | WSL 内 `~/dify` | 1.16.1，commit `5456d4d56e5701999bc8da2a2c97f5ae9b3b78d3` |
+| 固定 checkout 语义参照 | WSL 内 `~/dify` | commit `5456d4d56e5701999bc8da2a2c97f5ae9b3b78d3`；不作为运行字节身份 |
+| 运行镜像 | 本地 debugger Compose 镜像 | `langgenius/dify-api:1.16.1`；Published image ID `sha256:48295be…6362cb` |
 | Compose project | `docker` | `dify_pub_20260828`，独立 DB / Redis / bind state |
 | 入口 | Windows `http://localhost:8088` | Windows Nginx `http://127.0.0.1:18088`；streaming client 在 Compose network 直连 `http://api:5001` |
 | 工作流 | 三个未发布草稿 App | 发布的 `dify/http-no-retry.yml` |
 | 副作用 sink | `guarded_loop/dify_sink.py` | 同一实现，独立状态目录 |
 | 凭据 | 不需要模型 API key | 不需要模型 API key；Published App token 只存在忽略目录，证据仅保存 SHA-256 前缀 |
 
-两个 WSL 发行版在证据收集后都已停止；VHD、Compose bind/volume 和悬挂 run 状态仍保留。
+Published 镜像与固定 checkout 的 `entrypoint.sh`、`celery_entrypoint.py` hash 相同，但 `ext_celery.py`
+分别为 `b380…` 与 `0735…`，并不相同；controller / service / task 文件也没有逐文件 byte binding。
+因此 checkout 只提供源码语义假设，executor 结论还必须由 worker log 与 active inspect 独立佐证。
+
+prefork 的结构化 post-rollback 快照是在隔离服务仍运行时采集；随后 sink 被停止，两个 WSL 发行版也
+停止。后一步是已转录进 prefork raw 的 host terminal observation，不是另一份容器 runtime JSON；VHD、
+Compose bind/volume 和悬挂 run 状态仍保留。
 Published 实验用独立 VHD 与 Compose project，未复用旧 debugger DB/Redis。隔离预检曾意外短暂启动原
 `Ubuntu`；据本轮操作者即时只读观察，旧 run / effect 未变，随后终止，但该中间观察没有独立归档。
 这个证据等级与限制也写入新 raw snapshot。
@@ -62,6 +72,7 @@ Published App id 为 `4a820f63-bd4b-47dd-9854-f36751116d8e`，workflow id 为
 | `pub-stream-worker-crash-001` | `streaming`；effect 后杀 exact active worker | 约 3 分钟快照仍 `running` / 0 steps | 1 | worker log + `celery inspect active` 双重命中 |
 | `pub-lateack-control-002` | experiment-only late ACK；`streaming` 正常控制 | `succeeded` / 3 steps | 1 | 阻塞时 `acknowledged=false`、Redis `unacked=1` |
 | `pub-lateack-worker-crash-001` | experiment-only late ACK；effect 后杀整个 exact active worker 容器 | 冷启动重投后 `succeeded` / 3 steps | **2** | same task id + `redelivered=true`；判定 `duplicate` |
+| `pub-prefork-control-003` | experiment-only prefork + late ACK；`streaming` 无故障控制 | `succeeded` / 3 steps | 1 | exact task PID 148 命中唯一 OS child、pool process 与 Redis unacked；内部 HTTP 200 后清零 |
 
 关键解释：
 
@@ -87,6 +98,28 @@ Published App id 为 `4a820f63-bd4b-47dd-9854-f36751116d8e`，workflow id 为
 - whole-container kill 没有留下 Celery parent 来执行即时 reject；本轮证明的是 Redis broker restoration，
   没有隔离证明 `reject_on_worker_lost`。三条 worker 崩溃结果都是本地单次、有界观察，不是 Dify 所有
   部署的恢复保证。
+- prefork 切片的 API / worker 各自读取到 exact-task `acks_late=true`、`reject_on_worker_lost=true`，
+  broker / result-backend / global / live-channel timeout 均为 900 秒；worker argv 和 stats 又独立证明
+  prefork、concurrency 1、prefetch 1。application config 仍显示默认 prefetch 4，不能拿它替代 argv / stats。
+- 两次请求前快照保持同一 worker、controller PID 1、唯一 direct child PID 148 与相同 start ticks；
+  stats pool 为 `celery.concurrency.prefork:TaskPool`、processes `[148]`。启动仍运行 gRPC / psycopg2 的
+  gevent-related patch，因此只证明这个本地 HTTP workflow 的可行性，不证明一般兼容性。
+- 有效 prefork control 阻塞时 exact task `acknowledged=false / redelivered=false`、Redis queue 0 / unacked 1 /
+  index 1，sink attempt 1 已落盘；orchestrator 创建 release 后内部 HTTP 是 200 且 body 为
+  `released=true`，同一 run
+  以 3 steps 完成、effect 仍为 1、Redis 全清、日志 received / succeeded 各一次且无 redelivery。
+- 第一次 prefork control 的决定性失败证据是内部 Squid 504，未收到 sink origin
+  `200 + released=true`；release 内容时间、NTFS stat 与 client wall / monotonic 读数不能可靠
+  建立跨时钟先后，不作因果 gate。第二次在发请求前暴露 fail-closed client-name guard
+  缺陷；orchestration 只记录 workflow request 未发出，没有失败后 DB / Redis / sink 快照或单独
+  三路径测试 transcript。当前 hash-pinned helper 已改用 exit code，后续 control-003 在该 helper
+  hash 下完成，但不反向补齐这些未归档证据。
+- artifact 跨两次 WSL boot：最初 baseline / control-001 / 旧 rollback 在 `8b2dd1ae…`，control-002 /
+  control-003 / 当次 rollback 在 `d54236db…`。只为 control-003 blocked → final 主张同 boot process
+  continuity；rollback 是当次 boot 的 base / gevent 实测与旧 baseline 配置/拓扑等价。
+- prefork 本轮没有注入故障。回滚以 base-only Compose 重建四个相关服务，独立保存四者无 overlay、
+  API / worker ACK false / false、transport options 为空、live channel 3600，以及 worker gevent / max 4 /
+  prefetch 4 / 无 OS child；`next_fault_eligible` 不是 recovery 结论。
 
 ## 本地复现要点
 
@@ -94,7 +127,7 @@ sink 必须和 Dify 在同一个 Docker 网络，并把仓库挂载为 `/bench`�
 
 ```bash
 docker run -d --name dify-bench-sink --network docker_default \
-  -v /mnt/c/Users/Alienware/agent-crash-recovery-bench:/bench -w /bench \
+  -v /path/to/agent-crash-recovery-bench:/bench -w /bench \
   langgenius/dify-api:1.16.1 \
   python -m guarded_loop.dify_sink --host 0.0.0.0 --port 8099 \
   --state-dir /bench/_dify_bench/sink
@@ -125,12 +158,12 @@ DB run、Celery task 或 sink event。只重启隔离发行版内 Docker daemon 
 Redis `PONG`、API healthy 和 worker ready，再用新 key 跑出有效 control / fault。不要把这个环境故障
 算成 Dify 行为。
 
-late-ACK 配置不是对 Dify checkout 或 image 的持久修改：实验 overlay 从镜像内同 revision 文件复制，
-只增加 task annotation 与 Celery Redis 的三处 120 秒 timeout，随后以 read-only bind mount 注入 API / worker
-相关服务。操作者在证据收集后不带 override 重建了相关服务；保留的 post-rollback runtime 快照只对
-worker 独立验证 effective `acks_late=false`、`reject_on_worker_lost=false`、空 transport options 和
-live channel 默认 3600 秒。原 `ext_celery.py` hash 恢复只保留了操作者终端观察，没有单独归档；也不能
-把 worker 快照扩写成四类服务都有独立归档的回滚证明。
+late-ACK 配置不是对 Dify checkout 或 image 的持久修改：overlay 覆盖运行镜像内 `ext_celery.py`，
+runtime image base、固定 checkout 与 effective overlay 的 hash 分别为 `b380…`、`0735…`、`6ec8…`，
+不能称为同一 revision 的字节身份。旧 late-ACK artifact 只独立归档 worker 的 post-rollback effective
+设置；不能把它扩写成四类服务都有独立归档。后来的 prefork 切片另行归档了自己回滚后的四服务
+allowlisted env、mount count 0、target hashes，以及 API / worker effective runtime；这提高的是新切片的
+证据等级，不能反向升级旧 artifact。
 `pub-lateack-control-001` 因 client container entrypoint 错误被判无效；它没有创建 run、task 或 effect，
 也没有 Redis queue/unacked，不能算作框架行为。
 
@@ -146,10 +179,10 @@ live channel 默认 3600 秒。原 `ext_celery.py` hash 恢复只保留了操作
   精确 kill / restart 时间、exit 137 与三阶段 Redis 快照。
 - 三个 DSL 的 key 只用于实验 token，限定为 `[A-Za-z0-9_.-]{1,120}`；没有验证任意文本的 JSON escaping。
 - Published API 已覆盖 `blocking` attribution、`streaming` 正常 control、默认 early-ACK whole-worker
-  crash，以及一次 experiment-only late-ACK whole-worker crash；没有覆盖仅杀 Celery pool child 来隔离
-  `reject_on_worker_lost`、集群 worker、定时任务、API executor crash、生产流量或连续在线的 timeout
-  redelivery latency 测量。
-- 固定 revision 的 worker entrypoint 默认 pool 是 `gevent`，本轮 task 日志也是 `Dummy-*` 上下文；没有
-  证据表明现有拓扑有可单杀的 OS child。任何 prefork control 都是新增实验变量，必须先独立验证正常路径，
-  不能直接把下一次 fault 称为同配置复现。
+  crash、一次 experiment-only late-ACK whole-worker crash，以及一次 experiment-only prefork 无故障
+  control；没有覆盖仅杀 Celery pool child 来隔离 `reject_on_worker_lost`、集群 worker、定时任务、API
+  executor crash、生产流量或连续在线的 timeout redelivery latency 测量。
+- 新 no-fault prefork 切片已证明本地 runtime 存在一个可精确归因的 direct OS pool child，但从未杀过它。
+  因此 child-loss 后由 parent 触发的即时 reject / requeue、replacement child、Redis visibility restoration、
+  recovery latency 和 effect count 都仍未测；下一次 fault 必须作为独立切片重新建立全部门槛。
 - sink 无认证，只能用于本机受控实验，不应暴露到公网。

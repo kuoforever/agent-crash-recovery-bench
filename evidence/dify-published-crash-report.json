@@ -5,14 +5,17 @@
   "raw_snapshot": "evidence/dify-published-crash-raw.json",
   "environment": {
     "dify_version": "1.16.1",
-    "dify_source_commit": "5456d4d56e5701999bc8da2a2c97f5ae9b3b78d3",
+    "inspected_source_checkout_commit": "5456d4d56e5701999bc8da2a2c97f5ae9b3b78d3",
+    "inspected_source_checkout_role": "semantic_reference_not_runtime_byte_identity",
+    "runtime_image_id": "sha256:48295be2027d55f7791231c32b1e585a03eed42e3f88d014ae39ee15eb6362cb",
+    "runtime_image_source_commit_verified": false,
     "deployment": "Isolated local Docker Compose stack in DifyBench-Isolated-20260828",
     "published_app_id": "4a820f63-bd4b-47dd-9854-f36751116d8e",
     "workflow_id": "249f4342-8fd8-4def-a464-15ee54426e6e"
   },
   "execution_modes": {
-    "blocking": "Runs the published workflow in an in-process API worker thread in this Dify revision.",
-    "streaming": "Enqueues workflow_based_app_execution_task on the Celery workflow_based_app_execution queue in this Dify revision."
+    "blocking": "The fixed-checkout semantics indicate an in-process API worker thread; the measured blocking control independently corroborated that executor boundary.",
+    "streaming": "The fixed-checkout semantics indicate workflow_based_app_execution_task enqueueing; measured worker logs and active-task inspection independently corroborated that path."
   },
   "cases": [
     {
@@ -117,7 +120,10 @@
     "The old debugger evidence remains in evidence/dify-semantics-report.json and evidence/dify-raw-snapshot.json and was not overwritten.",
     "One invalid streaming control attempt was excluded after a Docker bridge firewall-rule problem was proven and repaired; a new key was used for every valid rerun.",
     "The original Ubuntu runtime was briefly started during isolation preflight. An immediate operator read-only observation found no old run or effect change before it was stopped, but that intermediate check was not independently archived; the committed historical evidence files were not changed.",
+    "The fixed checkout is a semantic reference rather than verified runtime byte identity. Executor attribution is supported independently by measured logs and active-task evidence.",
     "This is a local framework benchmark, not production experience or a production reliability guarantee."
   ],
-  "single_next_experiment": "In the isolated stack only, configure the workflow execution task for late ACK plus reject-on-worker-lost, set and record an explicit bounded Redis broker visibility_timeout, verify the effective task and broker transport settings, and repeat the exact Published API streaming fault with an observation window that crosses that timeout to measure whether redelivery recovers, duplicates the side effect, or remains uncertain."
+  "next_experiment_at_report_generation": "In the isolated stack only, configure the workflow execution task for late ACK plus reject-on-worker-lost, set and record an explicit bounded Redis broker visibility_timeout, verify the effective task and broker transport settings, and repeat the exact Published API streaming fault with an observation window that crosses that timeout to measure whether redelivery recovers, duplicates the side effect, or remains uncertain.",
+  "next_experiment_completed_by": "evidence/dify-published-late-ack-report.json",
+  "subsequent_related_evidence": "evidence/dify-prefork-control-report.json"
 }

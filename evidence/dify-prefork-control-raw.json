@@ -1,0 +1,451 @@
+{
+  "schema_version": 1,
+  "captured_at_utc": "2026-08-30T04:38:38.0855202Z",
+  "evidence_kind": "sanitized_raw_snapshot",
+  "scope": {
+    "system": "Local Dify 1.16.1 Published Service API streaming workflow",
+    "experiment": "Experiment-only prefork/concurrency-1 feasibility and no-fault late-ACK normal control",
+    "fault_injected": false,
+    "fault_action_allowed_during_run": false
+  },
+  "evidence_window": {
+    "first_baseline_capture_utc": "2026-08-30T03:45:27.147005+00:00",
+    "valid_control_first_topology_capture_utc": "2026-08-30T04:24:31.587331+00:00",
+    "valid_control_last_post_rollback_capture_utc": "2026-08-30T04:33:39.867034+00:00"
+  },
+  "provenance": {
+    "artifact_manifest_sha256": {
+      "baseline-gevent-runtime.json": "f03b8d2363e29b77871f61b8d504f79a3b529579c0a6e2438cd4fb9ea4ba9037",
+      "baseline-gevent-final-helper.json": "769ced3745dfe509cebfec28c813afec50db2c999e8a6a7570730b95c26ce44a",
+      "prefork-runtime-authoritative.json": "c13fbc4156641183cd052dc050ee1c7b109d5dd6419b4b2e42c694d5348a6fbc",
+      "prefork-topology-1.json": "c9ff9cc1ab0455b29499793bc138ecfaaee3d290335b7851c53522649cf5d403",
+      "prefork-topology-2.json": "8a1be01a50ea3aff59a37d54fe7e21ab53a5fa49b5fe8fac6c9fcc727cd29625",
+      "prefork-pre-request-final-helper.json": "08897a7f7c06a98cb47e3e9e5845483a97d0c49903fff7310ebc9dfb5820d5c2",
+      "control-blocked.json": "50df2670fe9abc6c013345c7c658c409118ccf9ac4e7b60f676892ac51249636",
+      "control-client.json": "499dc1e910002fbd85df296ab0dc2e061f5897ec8e2b7360fa96afc1d17ceb07",
+      "control-final.json": "7c09c0c5fa9dfc7fbf384579004efeafd826c73edcecdbbb4aef982b70b643a5",
+      "rollback-gevent-runtime.json": "6ffc9e3cf015362bbf321e755d64396a4be570be72c733ba26000c4c9ffe4db9",
+      "post-rollback-gevent.json": "6ac437724abd6d1fb311c34b2473fb76ae25e5f62a2b530c3405a8b091c44a9f",
+      "control-002-runtime-authoritative.json": "af6497a048093177d0fab153ab1a9ef5977b8de996bc17b82c21d15c70153118",
+      "control-002-topology-1.json": "9a0732ac4a512bcbccd1288bc6e8a82667ebb9d27742f985784d69edc500405d",
+      "control-002-pre-request.json": "65523d933335f228377f5b39a183385adf4daafa35372ebb7ce87b5bbdf728c4",
+      "control-002/orchestration.json": "5e63ea3715f821ea7fb1d9120661255bffb042188319a74373d023b7766c39a1",
+      "control-003-runtime-authoritative.json": "da1786fb2b6db3f43770ea10bf8718e074a196fe78ae0994bb7f63677a2e7d73",
+      "control-003-topology-1.json": "3d4f77e4b3e6ea12506c489ac147fdc567eba4bbcfaca57d42077aa3f6a11c7f",
+      "control-003-pre-request.json": "afb80071ee304663a238acd626200e729f950222e92f97a51e52c5e05881c29b",
+      "control-003/blocked.json": "7fe3302e353d66760c1029a6fa9b6692cf9c02fb42757cf8c240d18921ed70e8",
+      "control-003/client.json": "bd6adb93e558979270db9add3f512825de19e39ac2b1917c80fff99ba20f571d",
+      "control-003/final.json": "910162a5e6d76b00b863e858abaa647d8be9c08a0c1fcb118390f00e12690354",
+      "control-003/orchestration.json": "476ebc14d90c301abdc180b619ca2b5033264f41e69395a1f2a863dd9daeb06f",
+      "control-003-rollback-runtime.json": "e23639c39220b6d39c36dee56c8296471e1763dc645300583bf26160cc54443f",
+      "control-003-post-rollback.json": "e27dd6d515d876538792246f32de7030c25f3b393e67cd7ec5364a1e7ef81a9f"
+    },
+    "artifact_root": "_dify_bench/published-20260828/prefork-control-001",
+    "credential_handling": "Tracked evidence omits the Published App token, authorization headers, passwords, cookies, full service environments, and the raw SSE body. Runtime service environments were allowlisted and rendered Compose content was hashed rather than copied."
+  },
+  "environment": {
+    "dify_version": "1.16.1",
+    "deployment": "Docker Compose in dedicated WSL distribution DifyBench-Isolated-20260828",
+    "compose_project": "dify_pub_20260828",
+    "docker_server_version": "29.1.3",
+    "docker_compose_version": "2.29.7",
+    "compose_default_network_id": "b346a4c948eae36bf56713e561041889d1ddfeb62e05f19679fd71cdd1e1febe",
+    "wsl_boot_scope": {
+      "baseline_control001_and_old_rollback": "8b2dd1ae-2e4f-4abe-9420-9fdac6ccc72c",
+      "control002_control003_and_current_rollback": "d54236db-1de7-4622-a0b6-a1a066c21f46",
+      "valid_control_and_current_rollback_same_boot": true,
+      "cross_boot_process_identity_continuity_claimed": false
+    },
+    "models_or_external_api_keys_required": false
+  },
+  "content_identity_chain": {
+    "semantic_source_checkout": {
+      "commit": "5456d4d56e5701999bc8da2a2c97f5ae9b3b78d3",
+      "role": "semantic_reference_not_runtime_byte_identity",
+      "file_sha256": {
+        "entrypoint": "5d8c06e990ac0c45387d281b103c43d2e21b44ddc32f99bd1f95b2e901f3e448",
+        "celery_entrypoint": "c48ec85a56570d6e4b211350e29128b8a088d47c6732f1a606d90cbe55d38ead",
+        "ext_celery": "0735a2cbf7657822d2c1f82b6cfbaab94a715b7133757fd6d26d421004941a45"
+      }
+    },
+    "runtime_image": {
+      "tag": "langgenius/dify-api:1.16.1",
+      "image_id": "sha256:48295be2027d55f7791231c32b1e585a03eed42e3f88d014ae39ee15eb6362cb",
+      "authority": "runtime_identity",
+      "source_commit_verified": false,
+      "file_sha256": {
+        "entrypoint": "5d8c06e990ac0c45387d281b103c43d2e21b44ddc32f99bd1f95b2e901f3e448",
+        "celery_entrypoint": "c48ec85a56570d6e4b211350e29128b8a088d47c6732f1a606d90cbe55d38ead",
+        "ext_celery": "b380fb2194f6e0e4251ec6b9fe0d0f04c6cc2307e2ee35aa8ef0523f6ddc4ad7"
+      }
+    },
+    "checkout_matches_runtime_image": {
+      "entrypoint": true,
+      "celery_entrypoint": true,
+      "ext_celery": false
+    },
+    "effective_overlay": {
+      "ext_celery_sha256": "6ec8bfb1f47be09efda9d1c6dcef0e3e17f8706e5d5c4007432f75e98931ddcc",
+      "compose_override_sha256": "14160cebbafc3c2ab9661b69bb737b5d687fc22870854feed32e71b4ba3ee65c",
+      "rendered_compose_sha256": "7b5571db7b567dfbae2ec17ec49f8ad4b3b09acb8a79074cccd45ed1413de195",
+      "mount_mode": "read_only",
+      "mounted_services": [
+        "api",
+        "api_websocket",
+        "worker",
+        "worker_beat"
+      ]
+    },
+    "helper_sha256": {
+      "capture_prefork_state": "9cfb5c1be939afa382092b599c31ebbce5d8a3e7ffea7102eb211c7b9d9917cf",
+      "capture_runtime_environment": "194d1bbcaf08a5361d4abf7839fbdfbb92db89c3b59ccb09ed60a17200c27793",
+      "inspect_prefork_runtime": "f6fe63087986aecaaa108e4e27a8979288e67ad09076858a0d875c86778c6bf4",
+      "normal_control_orchestrator": "9b3f608036ccdebcdf8350969789fb055a18eaaffee5ff158b29149622a11183"
+    }
+  },
+  "experimental_override": {
+    "task_name": "tasks.app_generate.workflow_execute_task.workflow_based_app_execution_task",
+    "exact_task_annotation": {
+      "acks_late": true,
+      "reject_on_worker_lost": true
+    },
+    "worker": {
+      "pool": "prefork",
+      "concurrency": 1,
+      "amount": 1,
+      "autoscale": false,
+      "cli_prefetch_multiplier": 1,
+      "app_config_prefetch_multiplier": 4
+    },
+    "visibility_timeout_seconds": 900
+  },
+  "effective_runtime_chain": {
+    "pre_request_configuration_capture_utc": "2026-08-30T04:18:40.173747+00:00",
+    "post_run_same_service_configuration_capture_utc": "2026-08-30T04:29:47.031894+00:00",
+    "same_api_container_id": "e519a00132911fe7a8f9cfeeada17800f0efaa96d9b1d1340ecf3e1afcb73a8e",
+    "same_api_started_at": "2026-08-30T04:17:07.53559963Z",
+    "api_restart_count": 0,
+    "same_worker_container_id": "5cafb9ed47444915fb74d06fca91c5ead4efa22d1c68b6715c27c5256aa8a161",
+    "same_worker_started_at": "2026-08-30T04:17:07.530511636Z",
+    "worker_restart_count": 0,
+    "api_and_worker_task_settings": {
+      "task_acks_late_global": false,
+      "task_acks_late_effective": true,
+      "task_reject_on_worker_lost_global": false,
+      "task_reject_on_worker_lost_effective": true,
+      "task_acks_on_failure_or_timeout_effective": true,
+      "task_ignore_result": true
+    },
+    "api_and_worker_timeout_surfaces_seconds": {
+      "broker_transport_options": 900,
+      "result_backend_transport_options": 900,
+      "global_visibility_timeout": 900,
+      "live_redis_channel": 900
+    },
+    "effective_prefetch_evidence": {
+      "worker_argv_prefetch_multiplier": 1,
+      "worker_stats_prefetch_count": 1,
+      "app_config_value_not_used_as_effective_worker_value": 4
+    },
+    "startup_observations": [
+      "gRPC patched with gevent.",
+      "psycopg2 patched with gevent.",
+      "concurrency: 1 (prefork)"
+    ]
+  },
+  "prefork_topology": {
+    "snapshot_count": 2,
+    "snapshots": [
+      {
+        "label": "prefork-control-003-topology-1",
+        "capture_started_at_utc": "2026-08-30T04:24:31.587331+00:00",
+        "capture_finished_at_utc": "2026-08-30T04:24:54.567154+00:00",
+        "effect_count": 0,
+        "active_task_count": 0,
+        "redis_queue_unacked_index": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "label": "prefork-control-003-pre-request",
+        "capture_started_at_utc": "2026-08-30T04:25:04.039402+00:00",
+        "capture_finished_at_utc": "2026-08-30T04:25:29.378766+00:00",
+        "effect_count": 0,
+        "active_task_count": 0,
+        "redis_queue_unacked_index": [
+          0,
+          0,
+          0
+        ]
+      }
+    ],
+    "stable_identity": {
+      "worker_container_id": "5cafb9ed47444915fb74d06fca91c5ead4efa22d1c68b6715c27c5256aa8a161",
+      "worker_hostname": "celery@5cafb9ed4744",
+      "controller": {
+        "container_pid": 1,
+        "host_pid": 18826,
+        "host_start_ticks": 13312
+      },
+      "only_direct_os_child": {
+        "container_pid": 148,
+        "host_pid": 20212,
+        "host_ppid": 18826,
+        "host_start_ticks": 16136
+      },
+      "worker_stats": {
+        "pool_implementation": "celery.concurrency.prefork:TaskPool",
+        "max_concurrency": 1,
+        "pool_processes": [
+          148
+        ],
+        "prefetch_count": 1
+      }
+    },
+    "gates": {
+      "prefork_topology_pass_in_both_snapshots": true,
+      "same_container_parent_child_start_identity": true,
+      "pool_process_matches_only_direct_os_child": true,
+      "fresh_key_before_request": true
+    }
+  },
+  "normal_control": {
+    "classification": "valid_prefork_late_ack_normal_control",
+    "input_key": "pub-prefork-control-003",
+    "workflow_run_id": "d1739d2f-649d-49e1-b1d6-b123aae38733",
+    "celery_task_id": "0ebe12d3-3334-4654-842f-98377af19e80",
+    "sse_task_id": "9ece9806-a37b-4ebc-89c7-766dbbdf0206",
+    "fault_injected": false,
+    "blocked": {
+      "capture_started_at_utc": "2026-08-30T04:26:07.690178+00:00",
+      "capture_finished_at_utc": "2026-08-30T04:26:35.857933+00:00",
+      "workflow_status": "running",
+      "total_steps": 0,
+      "node_statuses": {
+        "start": "succeeded",
+        "effect": "running"
+      },
+      "active_task": {
+        "worker_pid": 148,
+        "acknowledged": false,
+        "redelivered": false,
+        "routing_key": "workflow_based_app_execution",
+        "task_name_matches": true,
+        "payload_key_run_and_streaming_match": true
+      },
+      "redis": {
+        "queue_len": 0,
+        "unacked_hlen": 1,
+        "unacked_index_zcard": 1,
+        "target_delivery_count": 1,
+        "delivery_tag": "b55d0d29-2c02-480f-8ebb-63477fba7f60",
+        "payload_sha256": "ce7a5421f23116aa77623362b4a137d85f473a66fa9301f015d5039461bd07ae",
+        "redelivered": null,
+        "score_epoch": 1788063968.7554255,
+        "visibility_due_epoch": 1788064868.7554255
+      },
+      "sink": {
+        "effect_count": 1,
+        "attempts": [
+          1
+        ],
+        "applied_at_epoch": 1788063969.3558207,
+        "marker_exists": true,
+        "release_exists": false
+      },
+      "task_binding_pass": true,
+      "redis_phase_pass": true
+    },
+    "release": {
+      "content": "2026-08-30T04:26:42.002828+00:00",
+      "created_at_utc_from_stat": "2026-08-30T04:26:42.002828+00:00",
+      "modified_at_utc_from_stat": "2026-08-30T04:26:42.003335+00:00",
+      "visibility_due_minus_orchestrator_release_wall_clock_observation_seconds": 866.7526025772095,
+      "cross_clock_value_used_by_orchestrator_as_safety_check": true,
+      "used_as_causal_or_behavioral_gate": false
+    },
+    "client_and_inner_effect": {
+      "outer_api_http_status": 200,
+      "terminal_sse_event_received": true,
+      "inner_effect_http_status": 200,
+      "inner_effect_body": {
+        "key": "pub-prefork-control-003",
+        "attempt": 1,
+        "released": true
+      },
+      "origin_server": "BaseHTTP/0.6 Python/3.12.13",
+      "via_proxy": "Squid/6.13",
+      "proxy_timeout_marker_present": false,
+      "client_started_at_utc": "2026-08-30T04:26:08.473122+00:00",
+      "client_finished_at_utc": "2026-08-30T04:26:44.066080+00:00",
+      "client_monotonic_elapsed_seconds": 32.62400248199992,
+      "client_wall_elapsed_seconds": 35.592958,
+      "release_to_client_finish_seconds_by_wall_clock_observation": 2.062745,
+      "cross_clock_order_used_as_causal_gate": false
+    },
+    "final": {
+      "capture_finished_at_utc": "2026-08-30T04:27:13.675813+00:00",
+      "workflow_status": "succeeded",
+      "total_steps": 3,
+      "workflow_elapsed_seconds": 34.831902,
+      "node_statuses": {
+        "start": "succeeded",
+        "effect": "succeeded",
+        "end": "succeeded"
+      },
+      "effect_node_elapsed_seconds": 34.753113,
+      "active_task_count": 0,
+      "redis_queue_unacked_index": [
+        0,
+        0,
+        0
+      ],
+      "effect_count": 1,
+      "effect_attempts": [
+        1
+      ],
+      "worker_log_counts": {
+        "received": 1,
+        "succeeded": 1,
+        "redelivery_or_requeue": 0
+      },
+      "blocked_to_final_worker_container_identity_match": true,
+      "blocked_to_final_worker_process_identity_match": true,
+      "blocked_to_final_redis_container_identity_match": true,
+      "cross_phase_continuity_pass": true
+    },
+    "next_fault_eligible": true
+  },
+  "invalidated_attempts": [
+    {
+      "input_key": "pub-prefork-control-001",
+      "classification": "invalid_prefork_late_ack_normal_control",
+      "failure_class": "proxy_timeout_without_sink_released_response",
+      "prefork_topology_and_blocked_task_attribution_passed": true,
+      "inner_effect_http_status": 504,
+      "proxy_error": "ERR_READ_TIMEOUT",
+      "workflow_status": "succeeded",
+      "effect_count": 1,
+      "release_content_utc": "2026-08-30T04:02:43.0523017Z",
+      "release_ntfs_creation_and_mtime_utc_observation": "2026-08-30T04:03:15.0012596Z",
+      "release_file_observation_provenance": "Retained ignored-filesystem observation; release content and NTFS stat are not members of the 24-artifact SHA-256 manifest",
+      "workflow_finished_at_utc": "2026-08-30T04:03:11.564756+00:00",
+      "client_monotonic_elapsed_seconds": 110.83336783200002,
+      "client_wall_elapsed_seconds": 121.016013,
+      "client_wall_minus_monotonic_seconds": 10.18264516799998,
+      "cross_clock_release_order_used_as_causal_gate": false,
+      "reason": "The inner HTTP output was Squid 504 ERR_READ_TIMEOUT rather than the sink origin's HTTP 200 released=true JSON. The release-content, NTFS-stat, workflow, and client wall timestamps cannot establish causal order because the client wall and monotonic durations differ by about 10.183 seconds. Dify succeeded alone was therefore not a valid normal-response gate.",
+      "next_fault_eligible": false
+    },
+    {
+      "input_key": "pub-prefork-control-002",
+      "classification": "preflight_tooling_failure",
+      "started_at_utc": "2026-08-30T04:22:44.615690+00:00",
+      "ended_at_utc": "2026-08-30T04:23:59.8655990Z",
+      "workflow_request_launched": false,
+      "post_failure_database_broker_sink_capture_archived": false,
+      "run_task_or_effect_absence_independently_verified": false,
+      "reason": "The archived orchestration record says the client collision guard used docker inspect stdout instead of its exit code and that no workflow request was launched; it does not retain the exact stdout value.",
+      "repair": "The current hash-pinned helper checks the exit code, but no standalone absent/present/infrastructure-error test transcript is archived.",
+      "follow_up": "Control-003 later completed under the archived helper hash; that does not retroactively prove unarchived control-002 external state or standalone guard-test paths."
+    }
+  ],
+  "rollback": {
+    "captured_at_utc": "2026-08-30T04:32:29.132347+00:00",
+    "compose_files": [
+      "/home/user/dify-published-20260828/docker/docker-compose.yaml"
+    ],
+    "rendered_compose_sha256": "d74775d575f4988b7c05a281a3cc89fa6c7f2a167b42291b9f176517db71cf9b",
+    "services": {
+      "api": "2c3642cebb5d09b41ff3459b36b4502419fd1b207a152906c26ff2490fbd5e01",
+      "api_websocket": "46befd7cc207bf9d178ced3c4796d890e65f2a46b4420a1b3a4304d0a555fd1b",
+      "worker": "46722e7089190c8febe58d20d83821b368e3ac4c989928b0c9ce75ac2fe329b3",
+      "worker_beat": "cccc089c5646b0a5155a94adb3d94a5f656b56c8d0d1d79a98ff6d2e1e0549c3"
+    },
+    "all_four_services_restart_count": 0,
+    "all_four_services_overlay_mount_count": 0,
+    "all_four_services_ext_celery_sha256": "b380fb2194f6e0e4251ec6b9fe0d0f04c6cc2307e2ee35aa8ef0523f6ddc4ad7",
+    "api_and_worker_effective": {
+      "task_acks_late": false,
+      "task_reject_on_worker_lost": false,
+      "broker_transport_options": {},
+      "result_backend_transport_options": {},
+      "global_visibility_timeout": null,
+      "live_redis_channel_visibility_timeout": 3600
+    },
+    "worker_topology": {
+      "pool": "celery.concurrency.gevent:TaskPool",
+      "max_concurrency": 4,
+      "prefetch_count": 4,
+      "direct_os_child_count": 0
+    },
+    "post_rollback_state": {
+      "capture_finished_at_utc": "2026-08-30T04:33:39.867034+00:00",
+      "workflow_status": "succeeded",
+      "effect_count": 1,
+      "active_task_count": 0,
+      "redis_queue_unacked_index": [
+        0,
+        0,
+        0
+      ],
+      "aggregate_helper_gates": {
+        "redis_phase_pass": false,
+        "target_cleared": true,
+        "target_not_queued": true,
+        "target_unacked_exactly_once": false,
+        "cross_phase_continuity_pass": false,
+        "worker_container_identity_matches_blocked": false,
+        "worker_process_identity_matches_blocked": false,
+        "redis_container_identity_matches_blocked": true,
+        "used_as_rollback_gate": false
+      }
+    },
+    "aggregate_helper_gate_interpretation": "The post_rollback helper's Redis phase and blocked-to-post-rollback process-continuity gates are not used as rollback gates: it retained the completed target task id, and rollback intentionally recreated the worker. Raw Redis counts plus the independently captured base-only configuration and gevent topology define rollback success.",
+    "final_host_observation": {
+      "scope": "Operator terminal observation, not a structured container-state capture or an unbounded current-state claim",
+      "observed_after_utc": "2026-08-30T04:33:39.867034+00:00",
+      "recorded_no_later_than_utc": "2026-08-30T04:38:38.0855202Z",
+      "exact_observed_at_utc_archived": false,
+      "sink_state": "stopped",
+      "wsl_distribution_states": {
+        "DifyBench-Isolated-20260828": "stopped",
+        "Ubuntu": "stopped"
+      },
+      "retained_data_deleted": false
+    }
+  },
+  "derived_assertions": {
+    "P3_override_effective": "pass",
+    "P4_real_prefork_child": "pass",
+    "no_fault_streaming_control": "pass",
+    "rollback_to_gevent_baseline": "pass",
+    "fault_recovery_measured": false,
+    "reject_on_worker_lost_isolated": false,
+    "exactly_once_under_fault_proven": false
+  },
+  "gate_definitions": {
+    "P3_override_effective": "API and worker independently exposed exact-task late ACK/reject settings and all four 900-second timeout surfaces, with the same read-only overlay on the four scoped services.",
+    "P4_real_prefork_child": "Two pre-request snapshots and worker stats agreed on one stable prefork controller, one direct OS child, pool processes [148], max concurrency 1, and prefetch 1.",
+    "rollback_to_gevent_baseline": "Current-boot base-only Compose, zero overlay mounts, default effective task settings, cleared Redis counts, and gevent/max-4/prefetch-4/no-child topology passed. Comparison with the older-boot baseline is configuration/topology equivalence, not process identity continuity."
+  },
+  "interpretation_limits": [
+    "No fault was injected. This evidence does not measure child loss, reject, requeue, redelivery, recovery latency, or side-effect deduplication under failure.",
+    "This is one local Dify 1.16.1 deployment, one worker, concurrency 1, one valid no-fault control, and two finite pre-request topology snapshots; it is not a stability, throughput, cluster, or production test.",
+    "The prefork worker still ran Dify's gevent-related gRPC and psycopg2 initializers, so the pool change and those initializers are coexisting experimental variables.",
+    "Only an HTTP Request workflow was measured; plugin, model-provider, gRPC workload, scheduler, and general Dify compatibility were not tested.",
+    "The fixed checkout is a semantic reference. Runtime identity is the image ID plus the archived selected entrypoint/config target hashes from the image and mounted overlay; the image build commit and controller/service/task whole-tree byte identity were not verified.",
+    "The API and worker each exposed broker, result-backend, global, and live-channel timeout values. No separate remote-inspect configuration surface is claimed.",
+    "Active inspect reported redelivered=false while the decoded Redis delivery field was null; those are distinct observations and are not collapsed.",
+    "The sink event pid=1 is the sink container process, not the Celery child pid=148.",
+    "For control-003, client wall time exceeded its monotonic elapsed time by about 2.969 seconds. The apparent release-mtime-to-client-finish wall-clock order is retained only as an observation, not a causal gate; the successful inner HTTP 200 released=true response remains the normal-control gate.",
+    "For control-001, release-content, NTFS-stat, workflow, and client wall timestamps disagree with the client monotonic duration by about 10.183 seconds, so no causal ordering is inferred. The decisive invalidation is Squid 504 without the sink origin's released=true response.",
+    "Control-001 release-file content and NTFS stat are transcribed retained-filesystem observations outside the 24-artifact SHA-256 manifest; they are not used as causal or validity gates.",
+    "The artifact window spans two WSL boots. Process identity continuity is claimed only within control-003 blocked-to-final on boot d54236db; current rollback is same-boot base/gevent evidence plus configuration/topology equivalence to the older boot, not cross-boot process continuity.",
+    "The successful sink response traversed Squid; it was not a direct proxy-free request. The origin status/body were HTTP 200 and released=true, but this short successful control does not negate the earlier approximately 120-second proxy timeout.",
+    "The source artifacts under _dify_bench are ignored and retained locally. Portable clones receive the sanitized transcribed facts and SHA-256 manifest, not the ignored raw files themselves.",
+    "This is a framework benchmark and must not be presented as production experience."
+  ]
+}

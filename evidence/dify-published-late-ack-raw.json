@@ -31,7 +31,9 @@
   },
   "environment": {
     "dify_version": "1.16.1",
-    "dify_source_commit": "5456d4d56e5701999bc8da2a2c97f5ae9b3b78d3",
+    "inspected_source_checkout_commit": "5456d4d56e5701999bc8da2a2c97f5ae9b3b78d3",
+    "inspected_source_checkout_role": "semantic_reference_not_runtime_byte_identity",
+    "runtime_image_source_commit_verified": false,
     "deployment": "Docker Compose in dedicated WSL distribution DifyBench-Isolated-20260828",
     "compose_project": "dify_pub_20260828",
     "docker_server_version": "29.1.3",
@@ -59,12 +61,12 @@
     },
     "dify_celery_extension": {
       "revision_url": "https://github.com/langgenius/dify/blob/5456d4d56e5701999bc8da2a2c97f5ae9b3b78d3/api/extensions/ext_celery.py",
-      "observation": "The experiment overlay was copied from this fixed revision before adding the bounded transport settings."
+      "observation": "This fixed checkout is a semantic reference. The runtime-image base hash and mounted overlay hash are recorded separately, and byte identity with the checkout ext_celery.py is not established."
     },
     "dify_worker_entrypoint": {
       "revision_url": "https://github.com/langgenius/dify/blob/5456d4d56e5701999bc8da2a2c97f5ae9b3b78d3/api/docker/entrypoint.sh#L32-L54",
       "celery_entrypoint_url": "https://github.com/langgenius/dify/blob/5456d4d56e5701999bc8da2a2c97f5ae9b3b78d3/api/celery_entrypoint.py",
-      "observation": "The worker pool defaults to gevent and celery_entrypoint.py patches gevent-related libraries; the measured Dummy-* execution context does not prove a separately killable OS pool child."
+      "observation": "When CELERY_WORKER_POOL and CELERY_WORKER_CLASS are unset, the inspected entrypoint semantics select gevent; the measured runtime also used gevent and Dummy-* task contexts. Later prefork evidence is a separate experiment."
     },
     "celery_task_settings": {
       "documentation_url": "https://docs.celeryq.dev/en/v5.6.0/userguide/configuration.html#task-acks-late",
@@ -88,7 +90,10 @@
     "visibility_timeout_seconds": 120,
     "mount": "A read-only experiment-local ext_celery.py overlay was mounted into api, api_websocket, worker, and worker_beat; no Dify source checkout or image layer was modified.",
     "image_ext_celery_sha256": "b380fb2194f6e0e4251ec6b9fe0d0f04c6cc2307e2ee35aa8ef0523f6ddc4ad7",
+    "runtime_image_ext_celery_role": "base_runtime_bytes",
     "overlay_ext_celery_sha256": "6ec8bfb1f47be09efda9d1c6dcef0e3e17f8706e5d5c4007432f75e98931ddcc",
+    "overlay_ext_celery_role": "effective_bind_mounted_bytes",
+    "checkout_byte_identity": "not_established_by_this_artifact",
     "compose_override_sha256": "98d7a823f30aae1e2e102e992fb042681fde2bb7dd768499d9fa2100fcbf279c"
   },
   "effective_runtime": {
@@ -362,12 +367,16 @@
     "isolated_dify_distribution_state": "stopped",
     "data_deleted": false
   },
+  "subsequent_related_evidence": {
+    "report": "evidence/dify-prefork-control-report.json",
+    "relationship": "Separate no-fault prefork experiment; it cannot retroactively support this whole-container fault."
+  },
   "interpretation_limits": [
     "The fault case is one local Dify 1.16.1 run with one whole worker container, one published workflow, one Redis broker, and an experiment-only task annotation.",
     "Late ACK improved broker-level recoverability relative to the separately recorded early-ACK fault, but it duplicated a non-idempotent external side effect; recoverability and exactly-once execution are independent properties.",
     "The final Dify run status was succeeded and total_steps was 3, but one original effect node row remained running while the redelivery created a second start/effect path. Final status alone is not sufficient recovery evidence.",
     "The external interruption prevents a claim about exact visibility-timeout latency or continuous restore cadence. The strongest supported timing claim is that the expired unacked delivery persisted and the same task was redelivered on a later cold worker start.",
     "No production deployment, multi-worker cluster, scheduled task, model provider, real user traffic, child-process-only loss, or API executor crash was tested.",
-    "The measured default gevent worker did not establish a separately killable OS pool child. A future prefork feasibility/control slice would add a new execution-pool variable and must pass a normal control before any child-kill fault."
+    "This artifact's measured gevent topology did not establish a separately killable OS pool child. Later prefork evidence is a separate experiment and cannot retroactively support this whole-container fault."
   ]
 }

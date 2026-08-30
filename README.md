@@ -22,7 +22,7 @@
 | `docs/career/` | 按 JD 选取的项目证据，以及教学式协作协议；不替代本页、设计或交接 |
 | `docs/DIFY-STATUS.md` | Dify 1.16.1 对照实验、复现环境与运行状态 |
 | `dify/` | 三个可导入的 Dify DSL：不重试、重试 3 次、人工审批 |
-| `evidence/` | 原始数据：崩溃注入报告、真实模型 trace，以及 Dify debugger / Published API early-ACK 与 late-ACK 摘要和脱敏快照 |
+| `evidence/` | 原始数据：崩溃注入报告、真实模型 trace，以及 Dify debugger / Published API early-ACK、late-ACK 与 prefork normal-control 摘要和脱敏快照 |
 
 ## 跑什么
 
@@ -103,7 +103,9 @@ debugger 结论在 `evidence/dify-semantics-report.json`，原始快照在
 `evidence/dify-published-crash-report.json`，原始快照在
 `evidence/dify-published-crash-raw.json`；late-ACK 对照在
 `evidence/dify-published-late-ack-report.json` 与
-`evidence/dify-published-late-ack-raw.json`。可导入 DSL 在 `dify/`。实验 key 限定为
+`evidence/dify-published-late-ack-raw.json`；prefork 无故障对照在
+`evidence/dify-prefork-control-report.json` 与
+`evidence/dify-prefork-control-raw.json`。可导入 DSL 在 `dify/`。实验 key 限定为
 `[A-Za-z0-9_.-]{1,120}`，不把任意用户文本直接当作 JSON 测试输入。
 
 ### Debugger 草稿：重试会重做整个 HTTP 节点
@@ -122,9 +124,12 @@ debugger 结论在 `evidence/dify-semantics-report.json`，原始快照在
 
 ### Published API：`blocking` 与 `streaming` 走不同 executor
 
-Dify 1.16.1 源码和实跑互相对上：Published workflow 的 `blocking` 分支在 API 进程内启动
-Python thread；`streaming` 分支才把 `workflow_based_app_execution_task` 投递到 Celery worker。
-因此“杀了 worker”之前必须先证明目标 run 确实在那个 worker 上 active。
+固定 checkout `5456d4d…` 只作控制流语义参照；实跑身份由 Dify 1.16.1 image ID、已归档的 selected
+entrypoint / config target 容器内 hash，以及 experiment overlay target hash 锚定。controller / service /
+task 全树没有 byte binding，不能把 checkout commit 当成镜像构建证明。source control flow 与 worker log、active inspect
+的运行时结果独立相符：Published workflow 的 `blocking` 分支在 API 进程内启动 Python thread；
+`streaming` 分支才把 `workflow_based_app_execution_task` 投递到 Celery worker。因此“杀了 worker”
+之前必须先证明目标 run 确实在那个 worker 上 active。
 
 | 场景 | 最终/快照状态 | 副作用次数 | 实测语义 |
 |---|---:|---:|---|
@@ -133,6 +138,7 @@ Python thread；`streaming` 分支才把 `workflow_based_app_execution_task` 投
 | `streaming`；effect 后杀 active worker | 约 3 分钟快照仍 `running` / 0 steps | 1 | task 已确认；无 queue/unacked、无重投、无应用层收敛 |
 | late-ACK `streaming` 正常控制 | `succeeded` / 3 steps | 1 | 阻塞时 task 未确认且 Redis `unacked=1`；释放后正常确认 |
 | late-ACK `streaming`；effect 后杀整个 active worker 容器 | 后续冷启动重投并 `succeeded` / 3 steps | **2** | 同一 task id 以 `redelivered=true` 重投；恢复工作流但重复副作用 |
+| prefork + late-ACK `streaming` 无故障控制 | `succeeded` / 3 steps | 1 | exact task 的 PID 同时命中唯一 OS child、pool process 与单条 Redis unacked；HTTP 200 释放后清零 |
 
 正式故障样本 `28e83e19-b8af-4344-8421-0b887b27712a` 在 kill 前同时满足三项归因：sink
 已有 `attempt=1`；worker log 含 exact run id；`celery inspect active` 显示该 task 在目标 worker
@@ -145,9 +151,10 @@ queue、`unacked`、`unacked_index` 都为空。
 和 HTTP 节点仍停在 `running`，SSE 客户端没有收到终态。它说明的是这一个配置下没有 broker
 恢复入口，不是 Dify 所有部署永远不会恢复。
 
-2026-08-30 的对照只给这一个 workflow task 加了 effective `acks_late=true` 与
+2026-08-30 的 late-ACK 对照只给这一个 workflow task 加了 effective `acks_late=true` 与
 `reject_on_worker_lost=true`，并把 Celery Redis 的 broker、result backend 与全局
-`visibility_timeout` 都设成 120 秒；API、worker、remote inspect 和 live Redis channel 四层读数一致。
+`visibility_timeout` 都设成 120 秒；API / worker 进程与 worker remote-conf 读数相符，live Redis
+channel 也实测为 120 秒。
 正常控制在 HTTP effect 阻塞时表现为 `acknowledged=false`、queue 0、`unacked=1`，释放后只执行一次并
 清空 unacked，说明配置确实打到了 Published `streaming` 路径。
 
@@ -163,7 +170,35 @@ early ACK 与 late ACK 的差异由此能直接对齐：early ACK 样本在 work
 **可恢复性与 exactly-once 是两个独立问题。** 整个容器被杀时 Celery parent 也消失，因此这轮能归因于
 Redis broker restoration，不能单独证明 `reject_on_worker_lost` 的即时 requeue 语义。
 
-四条边界必须一起说：
+### Prefork 无故障对照：真实 pool child 已证明，恢复语义尚未测
+
+随后单独开的 experiment-only 切片把同一个 task annotation 保留下来，将 visibility timeout 拉长到
+900 秒，并把 worker 显式设成 `prefork` / concurrency 1 / prefetch 1。两次请求前快照都看到同一
+worker、controller PID 1、唯一 direct OS child PID 148；`celery inspect stats` 同时给出
+`celery.concurrency.prefork:TaskPool`、max concurrency 1、processes `[148]` 和 prefetch 1。
+启动日志仍出现 gRPC / psycopg2 的 gevent-related patch，所以这不是“纯净 prefork”兼容性证明。
+artifact 跨两次 WSL boot：最初 baseline / control-001 / 旧 rollback 属于 `8b2dd1ae…`，control-002 /
+control-003 / 当次 rollback 属于 `d54236db…`。process identity 连续性只在 control-003 的
+blocked → final 同 boot 内成立；rollback 结论是当次 boot 的 base / gevent 实测与旧 baseline
+配置/拓扑等价，不是跨 boot 进程身份连续。
+
+有效 control `pub-prefork-control-003` 阻塞时，同一个 Celery task 的 `worker_pid=148` 同时命中
+pool process 与 direct OS child，active task 为 `acknowledged=false / redelivered=false`，Redis 是
+queue 0、`unacked=1`、index 1，sink 已 `fsync` attempt 1。orchestrator 创建 release 后，HTTP 节点的**内部**
+响应是 200，JSON 明确为 `attempt=1 / released=true`；同一 run 以 3 steps 成功，effect 仍为 1，
+Redis 全清，worker log 只有 received / succeeded 各 1 次、没有 redelivery。第一次 control 的决定性
+失败证据是内部 Squid 504，而不是 sink origin `200 + released=true`；release 内容时间、NTFS stat
+与 client wall / monotonic 读数不能可靠建立跨时钟先后，不作因果 gate。第二次在发请求前暴露
+client-name guard 缺陷；orchestration artifact 只证明 workflow request 未发出，没有归档失败后
+DB / Redis / sink 快照，也没有单独归档三路径测试 transcript。当前 hash-pinned helper 已改用
+exit code 判断，后续 control-003 在该 helper hash 下完成，但这不反向补齐未归档的测试。
+
+本轮**没有杀任何进程**。`next_fault_eligible=true` 只表示后续可以另开切片去杀 exact child，不是
+`reject_on_worker_lost`、requeue、redelivery、恢复时延或 exactly-once 的证据。证据收集后四个相关
+服务以 base Compose 重建；独立快照显示四者无 overlay，API / worker 的 ACK 设置恢复 false / false，
+live Redis channel 恢复 3600 秒，worker 回到 gevent / max 4 / 无 OS child。
+
+这些边界必须一起说：
 
 - Dify 的 HTTP 节点确实提供重试和错误处理配置；人工输入节点也提供暂停、表单提交与恢复。
   但重试的单位是整个节点，不替调用方解决副作用幂等。官方 CLI 文档也明确提醒：对可能已开始执行的
@@ -174,6 +209,8 @@ Redis broker restoration，不能单独证明 `reject_on_worker_lost` 的即时 
   timeout 恢复；这描述的是实测配置语义，不是框架缺陷。
 - late-ACK 故障样本证明本次 broker delivery 后来可重投，也证明了重投整个 workflow task 会重复
   已落盘的非幂等副作用；最终 `succeeded` 不能替代 task id、redelivery flag 和 effect count 证据。
+- prefork 正常 control 只证明真实 child attribution、late-ACK 正常路径和可回滚性；没有 child kill，
+  不能借它声称 fault recovery、即时 reject/requeue、超时重投或故障下 exactly-once。
 
 对应官方文档：[HTTP Request](https://docs.dify.ai/en/cloud/use-dify/nodes/http-request)、
 [错误处理](https://docs.dify.ai/en/cloud/use-dify/build/predefined-error-handling-logic)、
@@ -190,7 +227,8 @@ Redis broker restoration，不能单独证明 `reject_on_worker_lost` 的即时 
   LangChain 生态里的 RAG、向量库、Agent 预制件我仍然没有用过。
 - 崩溃注入 30 次 × 20 步，规模比我自己项目里那个基准（30 × 100）小。
 - Dify 只覆盖本地 1.16.1 的 debugger 草稿，以及独立 Compose 栈中的单 worker Published API
-  `blocking` / `streaming`、early ACK 和一次 experiment-only late ACK 对照；没有覆盖集群、定时任务、
-  生产流量、只杀 pool child 的 `reject_on_worker_lost` 隔离实验，或连续在线的 timeout 延迟测量。
+  `blocking` / `streaming`、early ACK、一次 experiment-only late ACK whole-container 对照和一次
+  experiment-only prefork 无故障控制；没有覆盖集群、定时任务、生产流量、只杀 pool child 的
+  `reject_on_worker_lost` 隔离实验，或连续在线的 timeout 延迟测量。
   debugger worker 结论只适用于约 14 分 24 秒窗口，early-ACK Published fault 只适用于约 3 分钟窗口；
   late-ACK fault 的外部暂停边界必须与其冷启动重投结论一起说明。

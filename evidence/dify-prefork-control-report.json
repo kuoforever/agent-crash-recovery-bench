@@ -1,0 +1,156 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-08-30",
+  "evidence_kind": "curated_summary",
+  "raw_snapshot": "evidence/dify-prefork-control-raw.json",
+  "prior_late_ack_report": "evidence/dify-published-late-ack-report.json",
+  "classification": "valid_no_fault_prefork_feasibility_and_streaming_normal_control",
+  "environment": {
+    "dify_version": "1.16.1",
+    "deployment": "Isolated local Docker Compose stack in DifyBench-Isolated-20260828",
+    "semantic_source_checkout_commit": "5456d4d56e5701999bc8da2a2c97f5ae9b3b78d3",
+    "semantic_source_checkout_role": "semantic_reference_not_runtime_byte_identity",
+    "runtime_image_id": "sha256:48295be2027d55f7791231c32b1e585a03eed42e3f88d014ae39ee15eb6362cb",
+    "runtime_image_source_commit_verified": false,
+    "wsl_boot_scope": {
+      "baseline_control001_and_old_rollback": "8b2dd1ae-2e4f-4abe-9420-9fdac6ccc72c",
+      "control002_control003_and_current_rollback": "d54236db-1de7-4622-a0b6-a1a066c21f46",
+      "cross_boot_process_identity_continuity_claimed": false
+    }
+  },
+  "evidence_gates": {
+    "P3_override_effective": "pass",
+    "P4_real_prefork_child": "pass",
+    "no_fault_streaming_control": "pass",
+    "rollback_to_gevent_baseline": "pass",
+    "fault_injected": false,
+    "reject_on_worker_lost_isolated": false,
+    "next_fault_eligible": true
+  },
+  "gate_definitions": {
+    "P3_override_effective": "API and worker independently exposed the exact-task late-ACK/reject settings and all four 900-second timeout surfaces under the scoped read-only overlay.",
+    "P4_real_prefork_child": "Two pre-request snapshots and worker stats agreed on one stable prefork controller, one direct OS child, pool processes [148], max concurrency 1, and prefetch 1.",
+    "rollback_to_gevent_baseline": "Current-boot base-only Compose, zero overlay mounts, default effective task settings, cleared Redis counts, and gevent/max-4/prefetch-4/no-child topology passed; older-boot comparison is configuration/topology equivalence, not process identity continuity."
+  },
+  "measured_configuration": {
+    "task_scope": "Only tasks.app_generate.workflow_execute_task.workflow_based_app_execution_task received the experiment annotation.",
+    "task_acks_late_effective": true,
+    "task_reject_on_worker_lost_effective": true,
+    "visibility_timeout_seconds": 900,
+    "api_and_worker_timeout_surfaces": [
+      "broker transport options",
+      "result-backend transport options",
+      "global visibility timeout",
+      "live Redis channel"
+    ],
+    "worker_pool": "prefork",
+    "worker_concurrency": 1,
+    "worker_prefetch_count": 1
+  },
+  "prefork_feasibility": {
+    "independent_snapshot_count": 2,
+    "worker_container_id": "5cafb9ed47444915fb74d06fca91c5ead4efa22d1c68b6715c27c5256aa8a161",
+    "worker_restart_count": 0,
+    "pool_implementation": "celery.concurrency.prefork:TaskPool",
+    "controller_container_pid": 1,
+    "only_direct_child_container_pid": 148,
+    "pool_processes": [
+      148
+    ],
+    "stable_parent_child_start_identity": true,
+    "startup_still_ran_gevent_related_initializers": true
+  },
+  "normal_control": {
+    "input_key": "pub-prefork-control-003",
+    "workflow_run_id": "d1739d2f-649d-49e1-b1d6-b123aae38733",
+    "celery_task_id": "0ebe12d3-3334-4654-842f-98377af19e80",
+    "blocked": {
+      "exact_task_worker_pid": 148,
+      "active_task_acknowledged": false,
+      "active_task_redelivered": false,
+      "redis_queue_len": 0,
+      "redis_unacked": 1,
+      "redis_unacked_index": 1,
+      "target_delivery_count": 1,
+      "effect_attempts": [
+        1
+      ]
+    },
+    "release_and_response": {
+      "inner_effect_http_status": 200,
+      "inner_effect_attempt": 1,
+      "inner_effect_released": true,
+      "proxy_timeout_observed": false,
+      "release_file_mtime_preceded_client_finish_by_wall_clock_observation": true,
+      "cross_clock_order_used_as_causal_gate": false
+    },
+    "final": {
+      "workflow_status": "succeeded",
+      "total_steps": 3,
+      "effect_attempts": [
+        1
+      ],
+      "redis_queue_len": 0,
+      "redis_unacked": 0,
+      "redis_unacked_index": 0,
+      "worker_log_received_count": 1,
+      "worker_log_succeeded_count": 1,
+      "redelivery_observed": false,
+      "blocked_to_final_identity_continuity": true
+    }
+  },
+  "invalidated_attempts": [
+    {
+      "input_key": "pub-prefork-control-001",
+      "classification": "invalid_prefork_late_ack_normal_control",
+      "reason": "The inner HTTP result was Squid 504 ERR_READ_TIMEOUT rather than the sink origin's HTTP 200 released=true response. Release-content, NTFS-stat, workflow, and client wall timestamps cannot establish causal order because client wall and monotonic durations differ by about 10.183 seconds. A Dify succeeded state alone did not make this a valid normal response."
+    },
+    {
+      "input_key": "pub-prefork-control-002",
+      "classification": "preflight_tooling_failure",
+      "reason": "The archived orchestration record says a fail-closed Docker client-name guard used inspect stdout instead of its exit code and that no workflow request was launched. No post-failure DB/broker/sink capture or standalone absent/present/infrastructure-error test transcript is archived. The current hash-pinned helper uses exit-code handling, and control-003 later completed under that helper hash, but neither fact retroactively verifies the missing control-002 evidence."
+    }
+  ],
+  "rollback": {
+    "base_compose_only": true,
+    "four_services_without_overlay": true,
+    "api_and_worker_task_acks_late_effective": false,
+    "api_and_worker_task_reject_on_worker_lost_effective": false,
+    "api_and_worker_transport_options": {},
+    "live_redis_channel_visibility_timeout_seconds": 3600,
+    "worker_pool": "celery.concurrency.gevent:TaskPool",
+    "worker_max_concurrency": 4,
+    "worker_prefetch_count": 4,
+    "worker_direct_os_child_count": 0,
+    "completed_run_and_single_effect_retained": true,
+    "redis_cleared": true,
+    "aggregate_helper_redis_phase_pass": false,
+    "aggregate_helper_target_cleared": true,
+    "aggregate_helper_target_not_queued": true,
+    "aggregate_helper_target_unacked_exactly_once": false,
+    "aggregate_helper_cross_phase_continuity_pass": false,
+    "aggregate_helper_worker_container_identity_matches_blocked": false,
+    "aggregate_helper_worker_process_identity_matches_blocked": false,
+    "aggregate_helper_redis_container_identity_matches_blocked": true,
+    "aggregate_helper_false_gates_used_as_rollback_gate": false
+  },
+  "key_finding": "An experiment-only prefork/concurrency-1 worker exposed one real OS pool child, and the exact blocked Published streaming task was bound to that child and one Redis unacked delivery. After the orchestrator created release, the sink returned HTTP 200 with released=true, the same run completed with one persisted effect, Redis cleared, and the stack was restored to its measured gevent configuration and topology. No fault or recovery behavior was measured.",
+  "runtime_notes": [
+    "The fixed checkout is a semantic reference, not the runtime identity. The runtime is pinned by image ID and archived selected entrypoint/config target hashes from the image and mounted overlay; entrypoint files matched the checkout, ext_celery.py did not, and neither the image build commit nor controller/service/task whole-tree byte identity was verified.",
+    "The pre-request runtime capture and post-run corroboration used the same API/worker service identities and restart count zero. The later capture also pins the repaired orchestrator hash.",
+    "The worker argv and stats establish effective prefetch 1 even though the application configuration object still reported its default value 4.",
+    "The successful origin response was proxy-mediated through Squid: origin HTTP 200 and released=true are the gate, not an assumption of a direct proxy-free path.",
+    "The post-rollback helper intentionally saw a replacement gevent worker: its Redis phase and cross-phase continuity aggregate gates were false, while target_cleared and target_not_queued were true and raw Redis counts were zero. Those aggregate false values are not rollback gates. Current-boot base-only Compose, no mounts, default effective settings, raw Redis counts, and gevent topology define rollback success; older-boot comparison is configuration/topology equivalence, not process identity continuity.",
+    "The first attempted normal control is retained as an invalid 504 proxy-timeout sample. Its conflicting wall and monotonic timing observations are not a causal gate; absence of the sink origin's HTTP 200 released=true response is decisive, and final workflow succeeded alone is never used as a transport-success criterion.",
+    "Control-001 release-file content and NTFS stat are retained-filesystem observations outside the 24-artifact SHA-256 manifest and are not used as causal or validity gates.",
+    "This is a local framework benchmark, not production experience or a production reliability guarantee."
+  ],
+  "does_not_prove": [
+    "Child-loss recovery",
+    "Immediate reject or requeue behavior",
+    "Redis redelivery timing",
+    "Exactly-once side effects under failure",
+    "Prefork stability, performance, plugin, model-provider, gRPC-workload, cluster, or production behavior"
+  ],
+  "single_next_experiment": "In a separate isolated slice with a fresh key, re-establish the same effective late-ACK/900-second configuration and stable prefork parent/child topology. Jointly bind the exact streaming task, one Redis unacked delivery, persisted attempt 1, and the fault-target tuple (worker_container_id, child_container_pid, child_host_pid, child_host_start_ticks). Immediately before kill, recapture that tuple and confirm unchanged parent identity, container ID, and restart count. Kill only child_host_pid from the host namespace, or child_container_pid only from the same container PID namespace; never kill the controller or container. Keep release absent while archiving parent/container continuity, replacement child identity, task and Redis transitions, logs, run/node state, and effects. Release only after the same task is active on the replacement child and Redis redelivery plus sink attempt 2 are archived. Otherwise observe continuously through the recorded visibility_due_epoch plus a fixed 120-second grace, classify no redelivery only as bounded_no_redelivery/uncertain, and use release afterward only for cleanup. Finish with a full rollback; do not assume whether immediate reject or later visibility restoration will be the path."
+}

@@ -10,12 +10,14 @@
     "executor_attribution": "The exact workflow run id was present both in the target worker log and in celery inspect active before the target container was killed.",
     "celery_runtime": "Console output from ignored helper inspect_celery_runtime.py executed inside the measured worker; the values are transcribed here, but no separate runtime-output file was archived.",
     "client_observations": "Sanitized outputs from ignored local API clients; all credential and session material is omitted.",
-    "source_attribution": "Read-only inspection of the checked-out Dify source revision recorded below.",
+    "source_attribution": "Read-only inspection of a fixed Dify checkout used as a semantic reference; runtime byte identity for the listed controller, service, and task files was not archived.",
     "fault_transcript": "Exact relevant values copied from ignored runtime transcript _dify_bench/published-20260828/stream-fault-001/fault-transcript.txt."
   },
   "environment": {
     "dify_version": "1.16.1",
-    "dify_source_commit": "5456d4d56e5701999bc8da2a2c97f5ae9b3b78d3",
+    "inspected_source_checkout_commit": "5456d4d56e5701999bc8da2a2c97f5ae9b3b78d3",
+    "inspected_source_checkout_role": "semantic_reference_not_runtime_byte_identity",
+    "runtime_image_source_commit_verified": false,
     "deployment": "Docker Compose in dedicated WSL distribution DifyBench-Isolated-20260828",
     "compose_project": "dify_pub_20260828",
     "docker_server_version": "29.1.3",
@@ -50,6 +52,8 @@
     "api_token_value_archived": false
   },
   "source_based_executor_attribution": {
+    "evidence_role": "fixed_checkout_semantics_correlated_with_runtime_log_and_active_inspect",
+    "runtime_byte_identity_for_listed_files": "not_archived",
     "controller": {
       "path": "api/controllers/service_api/app/workflow.py",
       "lines": "344-354",
@@ -375,12 +379,17 @@
       "repair": "Restarted the Docker daemon inside only DifyBench-Isolated-20260828, verified the new bridge rules were installed, verified a cross-container authenticated Redis PONG, waited for API health and worker readiness, and then used a new key for the valid control and fault runs."
     }
   ],
+  "subsequent_related_evidence": {
+    "report": "evidence/dify-prefork-control-report.json",
+    "relationship": "Separate no-fault prefork experiment; it does not alter this early-ACK case."
+  },
   "interpretation_limits": [
     "The blocking executor-attribution control is not a Celery worker recovery test; its task ACK settings and Redis visibility timeout are not applicable to that execution path.",
     "The streaming fault case is one local run with one worker, one published workflow, and an approximately three-minute post-kill observation window.",
     "No automatic redelivery or convergence was observed in that window; this is not proof that no separate long-delay reconciler could ever act.",
     "The observed acknowledged=true active task, effective task_acks_late=false, and empty unacked structures explain why Redis visibility timeout did not provide a recovery trigger in this configuration.",
     "The API client wall-clock timestamps and monotonic duration differ because the local WSL/container clock adjusted during the run; duration claims use the monotonic client value or are stated approximately.",
-    "No production deployment, cluster worker loss, API executor crash, scheduled task, model provider, or real user traffic was tested."
+    "No production deployment, cluster worker loss, API executor crash, scheduled task, model provider, or real user traffic was tested.",
+    "The fixed checkout supplies a source-level control-flow hypothesis. Runtime worker logs and active-task evidence corroborate executor attribution, but this artifact does not prove byte identity between the listed checkout files and the measured image."
   ]
 }
