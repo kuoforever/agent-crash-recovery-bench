@@ -130,8 +130,13 @@ docker run -d --name dify-bench-sink --network docker_default \
   -v /path/to/agent-crash-recovery-bench:/bench -w /bench \
   langgenius/dify-api:1.16.1 \
   python -m guarded_loop.dify_sink --host 0.0.0.0 --port 8099 \
+  --unsafe-allow-non-loopback \
   --state-dir /bench/_dify_bench/sink
 ```
+
+`0.0.0.0` 只用于这个隔离 Docker 网络，必须用 `--unsafe-allow-non-loopback` 显式确认；默认仍只绑定
+`127.0.0.1`。sink 默认把请求体限制在 16 KiB、同时处理最多 16 个 effect 请求，并用进程内锁加
+atomic replace 写 marker。这些是实验护栏，不是认证、跨进程事务或生产部署保证。
 
 Dify 的 SSRF 代理默认拒绝私网目标。本次只为本地实验重建了 `ssrf_proxy` 容器并放行 sink 主机名：
 
@@ -185,4 +190,4 @@ allowlisted env、mount count 0、target hashes，以及 API / worker effective 
 - 新 no-fault prefork 切片已证明本地 runtime 存在一个可精确归因的 direct OS pool child，但从未杀过它。
   因此 child-loss 后由 parent 触发的即时 reject / requeue、replacement child、Redis visibility restoration、
   recovery latency 和 effect count 都仍未测；下一次 fault 必须作为独立切片重新建立全部门槛。
-- sink 无认证，只能用于本机受控实验，不应暴露到公网。
+- sink 无认证；非 loopback bind 虽需显式 unsafe 开关，仍只能用于本机受控实验，不应暴露到公网。

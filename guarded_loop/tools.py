@@ -3,18 +3,21 @@
 这一层刻意不依赖 LangGraph，目的是能单独回答一个问题：
 框架换掉之后，"哪些保证是框架给的、哪些是我自己给的"能不能分清。
 """
+
 from __future__ import annotations
 
 import hashlib
 import json
 import os
 import sqlite3
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable, Literal
+from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 Outcome = Literal["ok", "failed", "uncertain"]
+LedgerState = Literal["fresh", "pending", "done"]
 
 
 class ToolFailure(Exception):
@@ -54,7 +57,16 @@ class Ledger:
             " idem_key TEXT PRIMARY KEY, state TEXT NOT NULL, receipt TEXT)"
         )
 
-    def lookup(self, idem_key: str) -> tuple[str, str | None]:
+    def close(self) -> None:
+        self.conn.close()
+
+    def __enter__(self) -> Ledger:
+        return self
+
+    def __exit__(self, *_exc: object) -> None:
+        self.close()
+
+    def lookup(self, idem_key: str) -> tuple[LedgerState, str | None]:
         if not self.enabled:
             return ("fresh", None)
         row = self.conn.execute(
@@ -76,32 +88,45 @@ class Ledger:
                 (receipt, idem_key),
             )
 
+    def clear_pending(self, idem_key: str) -> None:
+        """Forget an intent only when the tool guarantees no effect was applied."""
+        if self.enabled:
+            self.conn.execute(
+                "DELETE FROM applied WHERE idem_key=? AND state='pending'", (idem_key,)
+            )
+
 
 # --- 工具契约 -----------------------------------------------------------------
-class ReadStatusArgs(BaseModel):
+class ContractModel(BaseModel):
+    """Tool contracts reject fields that are not part of the frozen schema."""
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class ReadStatusArgs(ContractModel):
     target: str = Field(min_length=1)
 
 
-class ReadStatusResult(BaseModel):
+class ReadStatusResult(ContractModel):
     target: str
     status: str
 
 
-class WriteNoteArgs(BaseModel):
+class WriteNoteArgs(ContractModel):
     target: str = Field(min_length=1)
     text: str = Field(min_length=1, max_length=200)
 
 
-class WriteNoteResult(BaseModel):
+class WriteNoteResult(ContractModel):
     receipt: str
 
 
-class SubmitFormArgs(BaseModel):
+class SubmitFormArgs(ContractModel):
     target: str = Field(min_length=1)
     payload: dict[str, Any]
 
 
-class SubmitFormResult(BaseModel):
+class SubmitFormResult(ContractModel):
     receipt: str
 
 
@@ -109,11 +134,11 @@ class ToolSpec(BaseModel):
     name: str
     args_model: type[BaseModel]
     result_model: type[BaseModel]
-    fn: Callable[..., dict]
+    fn: Callable[..., dict[str, Any]]
     side_effect: bool
     needs_approval: bool
 
-    model_config = {"arbitrary_types_allowed": True}
+    model_config = ConfigDict(arbitrary_types_allowed=True, extra="forbid")
 
 
 def _sink_append(sink: Path, line: str) -> None:
@@ -126,14 +151,14 @@ def _sink_append(sink: Path, line: str) -> None:
 def build_registry(sink: Path) -> dict[str, ToolSpec]:
     """固定注册表。运行期不允许增删——工具集是契约的一部分，不是配置。"""
 
-    def read_status(target: str) -> dict:
+    def read_status(target: str) -> dict[str, Any]:
         return {"target": target, "status": "idle"}
 
-    def write_note(target: str, text: str) -> dict:
+    def write_note(target: str, text: str) -> dict[str, Any]:
         _sink_append(sink, f"note::{target}::{text}")
         return {"receipt": f"note-{target}"}
 
-    def submit_form(target: str, payload: dict) -> dict:
+    def submit_form(target: str, payload: dict[str, Any]) -> dict[str, Any]:
         _sink_append(sink, f"form::{target}::{json.dumps(payload, sort_keys=True)}")
         return {"receipt": f"form-{target}"}
 
@@ -166,10 +191,9 @@ def build_registry(sink: Path) -> dict[str, ToolSpec]:
     return {s.name: s for s in specs}
 
 
-def idem_key(thread_id: str, step: int, tool: str, args: dict) -> str:
-    blob = json.dumps(
-        {"t": thread_id, "s": step, "n": tool, "a": args}, sort_keys=True
-    ).encode()
+def idem_key(thread_id: str, step: int, tool: str, args: dict[str, Any]) -> str:
+    """Hash schema-validated, JSON-compatible arguments for one logical step."""
+    blob = json.dumps({"t": thread_id, "s": step, "n": tool, "a": args}, sort_keys=True).encode()
     return hashlib.sha256(blob).hexdigest()[:16]
 
 
@@ -179,8 +203,8 @@ def invoke(
     thread_id: str,
     step: int,
     tool: str,
-    raw_args: dict,
-) -> tuple[Outcome, dict | None, str]:
+    raw_args: dict[str, Any],
+) -> tuple[Outcome, dict[str, Any] | None, str]:
     """执行一次工具调用，返回 (三态, 结果, 说明)。
 
     调用方拿到 uncertain 时**必须停机**，不允许换个参数重来。
@@ -192,11 +216,12 @@ def invoke(
 
     # 入参校验：模型给的参数逐字段过 schema，不合规不进执行层。
     try:
-        args = spec.args_model(**raw_args)
-    except Exception as e:
+        args = spec.args_model.model_validate(raw_args)
+    except (TypeError, ValidationError) as e:
         return ("failed", None, f"args_rejected:{type(e).__name__}")
 
-    key = idem_key(thread_id, step, tool, raw_args)
+    canonical_args = args.model_dump(mode="json")
+    key = idem_key(thread_id, step, tool, canonical_args)
 
     if spec.side_effect:
         state, receipt = ledger.lookup(key)
@@ -211,10 +236,14 @@ def invoke(
     maybe_crash("pre_apply", step)
 
     try:
-        raw_result = spec.fn(**args.model_dump())
+        raw_result = spec.fn(**canonical_args)
     except ToolUncertain as e:
         return ("uncertain", None, f"dispatch_no_receipt:{e}")
     except ToolFailure as e:
+        if spec.side_effect:
+            # ToolFailure's contract guarantees that dispatch produced no effect, so the
+            # pending intent can be removed and a later retry remains safe.
+            ledger.clear_pending(key)
         return ("failed", None, f"tool_failed:{e}")
 
     # 副作用已经落地、账本还没标 done —— 崩溃注入的关键窗口就在这一行。
@@ -222,12 +251,22 @@ def invoke(
 
     # 出参校验：工具返回的东西也要过 schema，不能直接塞回状态里。
     try:
-        result = spec.result_model(**raw_result)
-    except Exception as e:
+        result = spec.result_model.model_validate(raw_result)
+    except (TypeError, ValidationError) as e:
+        if spec.side_effect:
+            # Dispatch returned, but without a valid receipt we cannot prove what happened.
+            # Keep the pending intent so recovery cannot replay the side effect.
+            return ("uncertain", None, f"invalid_receipt_after_dispatch:{type(e).__name__}")
         return ("failed", None, f"result_rejected:{type(e).__name__}")
 
     if spec.side_effect:
-        ledger.mark_done(key, result.model_dump().get("receipt", ""))
+        ledger.mark_done(key, str(result.model_dump(mode="json").get("receipt", "")))
 
     maybe_crash("post_commit", step)
-    return ("ok", result.model_dump(), "ok")
+    return ("ok", result.model_dump(mode="json"), "ok")
+
+
+def strictly_approved(decision: object) -> bool:
+    """Accept only the literal JSON/Python boolean ``true`` as approval."""
+
+    return type(decision) is bool and decision is True

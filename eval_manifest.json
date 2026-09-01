@@ -1,4 +1,13 @@
 {
-  "sha256": "fa9c9eed8e15387bcee762fa2eb594d049a0e173c18924994f5e40179741c0a5",
-  "n_cases": 10
+  "schema_version": 2,
+  "sha256": "8bfab4971eb9ec62a5fd93e2ffe6291d6aadc39ec44345b45ae47a9054cd74c7",
+  "criteria_sha256": "b03c3bf5b656bfc6befb0ccf093fdae098e141b5577a05264f209e9393b17fef",
+  "implementation_sha256": "88cdd244539a6b0d822c346fbbdf106b80a88f153fecc3ba12156854eeb8b1e0",
+  "protected_files": [
+    "guarded_loop/tools.py",
+    "guarded_loop/graph.py",
+    "guarded_loop/llm_run.py",
+    "guarded_loop/eval_trace.py"
+  ],
+  "n_cases": 15
 }
