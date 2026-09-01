@@ -1,20 +1,23 @@
 # Dify 对照实验状态
 
-**状态：Dify 1.16.1 的四个本地实验切片已经闭合。** 2026-08-04 的 debugger 草稿覆盖
+**状态：Dify 1.16.1 的五个本地实验切片已经闭合。** 2026-08-04 的 debugger 草稿覆盖
 HTTP 重试、Human Input、API 重启和一次 worker 硬崩溃；2026-08-28 的独立 Published API
 数据栈补了 `blocking` / `streaming` executor attribution 与默认 early-ACK task 的硬崩溃；2026-08-30
 又在同一隔离栈里完成 experiment-only late-ACK whole-container 对照，以及独立的 prefork feasibility +
-no-fault normal-control 切片。
+no-fault normal-control 切片；2026-09-01 再以新 boot / fresh key 完成只杀 exact prefork pool child 的
+故障切片并完整回滚。
 结果见根目录 `README.md`。debugger 的结构化记录在 `evidence/dify-semantics-report.json` 与
 `evidence/dify-raw-snapshot.json`；Published API 记录在 `evidence/dify-published-crash-report.json`
 与 `evidence/dify-published-crash-raw.json`；late-ACK 记录在
 `evidence/dify-published-late-ack-report.json` 与 `evidence/dify-published-late-ack-raw.json`；prefork
 无故障对照在 `evidence/dify-prefork-control-report.json` 与
-`evidence/dify-prefork-control-raw.json`。
+`evidence/dify-prefork-control-raw.json`；exact child-loss 在
+`evidence/dify-prefork-child-loss-report.json`、`evidence/dify-prefork-child-loss-raw.json` 与
+`evidence/dify-prefork-child-loss-manifest.json`。
 
 ## 环境
 
-| 项 | debugger 草稿（2026-08-04） | Published API（2026-08-28 / 30） |
+| 项 | debugger 草稿（2026-08-04） | Published API（2026-08-28 / 30、2026-09-01） |
 |---|---|---|
 | 运行位置 | WSL `Ubuntu`；Docker 28.2.2 + Compose v2.29.7 | 独立 WSL `DifyBench-Isolated-20260828`；Docker 29.1.3 + Compose v2.29.7 |
 | 固定 checkout 语义参照 | WSL 内 `~/dify` | commit `5456d4d56e5701999bc8da2a2c97f5ae9b3b78d3`；不作为运行字节身份 |
@@ -29,9 +32,11 @@ Published 镜像与固定 checkout 的 `entrypoint.sh`、`celery_entrypoint.py` 
 分别为 `b380…` 与 `0735…`，并不相同；controller / service / task 文件也没有逐文件 byte binding。
 因此 checkout 只提供源码语义假设，executor 结论还必须由 worker log 与 active inspect 独立佐证。
 
-prefork 的结构化 post-rollback 快照是在隔离服务仍运行时采集；随后 sink 被停止，两个 WSL 发行版也
-停止。后一步是已转录进 prefork raw 的 host terminal observation，不是另一份容器 runtime JSON；VHD、
-Compose bind/volume 和悬挂 run 状态仍保留。
+prefork normal-control 与 child-loss 的结构化 post-rollback 快照都在隔离服务仍运行时采集；随后各自
+停止实验 sink，child-loss 又移除本轮 client / sink 容器、结束同 boot keeper 并显式终止隔离 WSL。
+最新 raw 转录了 `2026-09-01T03:14:49.7087184+00:00` 的 host terminal observation：隔离发行版与
+`Ubuntu` 均为 `Stopped`。这是点时状态，不是另一份容器 runtime JSON 或无时限承诺；VHD、Compose
+bind/volume、数据库行、marker、release 和其他证据仍保留。
 Published 实验用独立 VHD 与 Compose project，未复用旧 debugger DB/Redis。隔离预检曾意外短暂启动原
 `Ubuntu`；据本轮操作者即时只读观察，旧 run / effect 未变，随后终止，但该中间观察没有独立归档。
 这个证据等级与限制也写入新 raw snapshot。
@@ -73,6 +78,7 @@ Published App id 为 `4a820f63-bd4b-47dd-9854-f36751116d8e`，workflow id 为
 | `pub-lateack-control-002` | experiment-only late ACK；`streaming` 正常控制 | `succeeded` / 3 steps | 1 | 阻塞时 `acknowledged=false`、Redis `unacked=1` |
 | `pub-lateack-worker-crash-001` | experiment-only late ACK；effect 后杀整个 exact active worker 容器 | 冷启动重投后 `succeeded` / 3 steps | **2** | same task id + `redelivered=true`；判定 `duplicate` |
 | `pub-prefork-control-003` | experiment-only prefork + late ACK；`streaming` 无故障控制 | `succeeded` / 3 steps | 1 | exact task PID 148 命中唯一 OS child、pool process 与 Redis unacked；内部 HTTP 200 后清零 |
+| `pub-prefork-child-loss-20260901-002` | experiment-only prefork + late ACK；effect 后只杀 exact pool child | 同一 run `succeeded` / 3 steps | **2** | parent/container 连续；replacement child 上 same task/tag `redelivered=true`；判定 `duplicate` |
 
 关键解释：
 
@@ -96,7 +102,7 @@ Published App id 为 `4a820f63-bd4b-47dd-9854-f36751116d8e`，workflow id 为
   后续冷启动时同一 task id 以 `redelivered=true` 收到并产生 attempt 2；最终 run 虽为 `succeeded`，
   但原 effect node row 仍为 `running`，应用层判定必须是 `duplicate`。
 - whole-container kill 没有留下 Celery parent 来执行即时 reject；本轮证明的是 Redis broker restoration，
-  没有隔离证明 `reject_on_worker_lost`。三条 worker 崩溃结果都是本地单次、有界观察，不是 Dify 所有
+  没有隔离证明 `reject_on_worker_lost`。此前三条 worker 崩溃结果都是本地单次、有界观察，不是 Dify 所有
   部署的恢复保证。
 - prefork 切片的 API / worker 各自读取到 exact-task `acks_late=true`、`reject_on_worker_lost=true`，
   broker / result-backend / global / live-channel timeout 均为 900 秒；worker argv 和 stats 又独立证明
@@ -117,9 +123,28 @@ Published App id 为 `4a820f63-bd4b-47dd-9854-f36751116d8e`，workflow id 为
 - artifact 跨两次 WSL boot：最初 baseline / control-001 / 旧 rollback 在 `8b2dd1ae…`，control-002 /
   control-003 / 当次 rollback 在 `d54236db…`。只为 control-003 blocked → final 主张同 boot process
   continuity；rollback 是当次 boot 的 base / gevent 实测与旧 baseline 配置/拓扑等价。
-- prefork 本轮没有注入故障。回滚以 base-only Compose 重建四个相关服务，独立保存四者无 overlay、
+- prefork normal-control 本身没有注入故障。它的回滚以 base-only Compose 重建四个相关服务，独立保存四者无 overlay、
   API / worker ACK false / false、transport options 为空、live channel 3600，以及 worker gevent / max 4 /
   prefetch 4 / 无 OS child；`next_fault_eligible` 不是 recovery 结论。
+- 独立 child-loss 切片在新 boot `fa91dc2b…` 下重新验证 bridge、Redis PONG、API health、worker ready、
+  exact-task late ACK / reject、900 秒四个 timeout surface 与稳定 prefork 拓扑。一个 client-name collision
+  在请求前失败，另一个 helper 因把初始 Redis `redelivered=null` 误约束成 `false` 而 fail closed；两者
+  均未 kill。后者只为清理创建 release，最终 1 次 effect、Redis 清零；helper 随后只放宽初始 null/false，
+  recovery 仍严格要求 `redelivered=true`。
+- 有效 child-loss 在 attempt 1 已 `fsync`、release 不存在、exact task active、active
+  `acknowledged=false / redelivered=false`、Redis queue 0 / unacked 1 / index 1 后，将 task PID 同时绑定到
+  唯一 pool process 与 direct OS child。kill 前立即重采 container / parent / child / start-ticks 四元组，
+  只对 WSL host PID namespace 的 exact child 发 `SIGKILL`，没有杀 parent 或 container。
+- surviving parent 记录 `WorkerLostError` 并生成 replacement child；同一 task id 与 delivery tag 在新 child
+  和 Redis 中都为 `redelivered=true`，attempt 2 在 release 不存在时落盘。第二次 delivery 比初始 visibility
+  due 早约 843.906 秒，因此本样本隔离到了 parent-side worker-loss requeue/redelivery，而不是 timeout
+  restoration；约 0.116 秒的 host kill-return → log receive 只是跨时钟观察，不作因果 gate。
+- release 只在 replacement / same-task redelivery / attempt 2 全部归档后创建。同一 run 最终 `succeeded`
+  / 3 steps、Redis 清零，但 sink 有两个 attempt，原 effect row 仍 `running`、重放 effect row 才成功；
+  判定 `duplicate`，不是 exactly-once 或 node-row reconciliation。归档 PID 永远只能作历史证据。
+- child-loss 结束后再次 base-only 重建四服务与 `ssrf_proxy`，实测四服务 mount 0、ACK false / false、
+  live channel 3600、worker gevent / max 4 / prefetch 4 / 无 child、Redis 全清；本轮 client / sink 容器移除，
+  两个 WSL 发行版最终点时观察均为 stopped，保留数据未删。
 
 ## 本地复现要点
 
@@ -156,6 +181,13 @@ Published fault 的 kill 前硬门槛比旧实验更严格：
 4. `celery inspect active` 必须同时显示 exact run、目标 task、目标 hostname 与 `acknowledged` 状态。
 5. 保存目标 container id、Redis queue/unacked 快照后才允许 kill。
 6. late-ACK 变体还要把 exact task id、delivery tag、visibility score / due 与 redelivery flag 对齐保存。
+7. pool-child-only 变体还要让 active `worker_pid` 同时命中唯一 stats pool process 与 direct OS child，
+   保存 `(worker_container_id, child_container_pid, child_host_pid, child_host_start_ticks)`。
+8. kill 前立即重采四元组并重验 parent、container ID、restart count；从 host namespace 只能杀
+   `child_host_pid`，从同一 container PID namespace 才能用 `child_container_pid`。
+9. kill 后在 release 仍不存在时，必须归档 surviving parent/container、replacement child、same-task
+   active/Redis `redelivered=true` 和 attempt 2，才能创建 release。
+10. 任一门槛失败都判 invalid/no-kill；历史 PID 只作证据，绝不作为下一次 target。
 
 隔离栈第一次建网后曾出现 Docker `FORWARD` 默认 `DROP`、但新 bridge 未进入 `DOCKER-FORWARD`
 规则的问题：DNS 能解析，新的 Redis TCP 连接却超时。`pub-stream-control-001` 因此被判无效；它没有
@@ -184,10 +216,11 @@ allowlisted env、mount count 0、target hashes，以及 API / worker effective 
   精确 kill / restart 时间、exit 137 与三阶段 Redis 快照。
 - 三个 DSL 的 key 只用于实验 token，限定为 `[A-Za-z0-9_.-]{1,120}`；没有验证任意文本的 JSON escaping。
 - Published API 已覆盖 `blocking` attribution、`streaming` 正常 control、默认 early-ACK whole-worker
-  crash、一次 experiment-only late-ACK whole-worker crash，以及一次 experiment-only prefork 无故障
-  control；没有覆盖仅杀 Celery pool child 来隔离 `reject_on_worker_lost`、集群 worker、定时任务、API
-  executor crash、生产流量或连续在线的 timeout redelivery latency 测量。
-- 新 no-fault prefork 切片已证明本地 runtime 存在一个可精确归因的 direct OS pool child，但从未杀过它。
-  因此 child-loss 后由 parent 触发的即时 reject / requeue、replacement child、Redis visibility restoration、
-  recovery latency 和 effect count 都仍未测；下一次 fault 必须作为独立切片重新建立全部门槛。
+  crash、一次 experiment-only late-ACK whole-worker crash、一次 prefork 无故障 control 与一次 exact
+  pool-child-only fault。child-loss 只证明本地单次 surviving-parent requeue/redelivery + duplicate recovery；
+  没有覆盖集群 worker、定时任务、API executor crash、生产流量、连续在线的 timeout redelivery latency、
+  child-loss 延迟分布或一般 prefork 稳定性/兼容性。
+- `pub-prefork-child-loss-20260901-002` 已收敛为 `succeeded`，但 sink 与数据库保留两次 effect 以及原
+  `running` effect row；不要手工清理或把最终成功解释为 exactly-once。所有 child / parent / host PID
+  都是历史证据，未来实验必须重新建立身份和归因门槛。
 - sink 无认证；非 loopback bind 虽需显式 unsafe 开关，仍只能用于本机受控实验，不应暴露到公网。
