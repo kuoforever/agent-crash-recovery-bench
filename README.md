@@ -22,7 +22,7 @@
 | `docs/career/` | 按 JD 选取的项目证据，以及教学式协作协议；不替代本页、设计或交接 |
 | `docs/DIFY-STATUS.md` | Dify 1.16.1 对照实验、复现环境与运行状态 |
 | `dify/` | 三个可导入的 Dify DSL：不重试、重试 3 次、人工审批 |
-| `evidence/` | 原始数据：崩溃注入报告、真实模型 trace，以及 Dify debugger / Published API early-ACK、late-ACK 与 prefork normal-control 摘要和脱敏快照 |
+| `evidence/` | 原始数据：崩溃注入报告、真实模型 trace，以及 Dify debugger / Published API early-ACK、late-ACK、prefork normal-control 与 exact child-loss 摘要、脱敏快照和 SHA-256 manifest |
 
 ## 跑什么
 
@@ -114,8 +114,12 @@ debugger 结论在 `evidence/dify-semantics-report.json`，原始快照在
 `evidence/dify-published-late-ack-report.json` 与
 `evidence/dify-published-late-ack-raw.json`；prefork 无故障对照在
 `evidence/dify-prefork-control-report.json` 与
-`evidence/dify-prefork-control-raw.json`。可导入 DSL 在 `dify/`。实验 key 限定为
+`evidence/dify-prefork-control-raw.json`；exact prefork child-loss 在
+`evidence/dify-prefork-child-loss-report.json`、`evidence/dify-prefork-child-loss-raw.json` 与
+`evidence/dify-prefork-child-loss-manifest.json`。可导入 DSL 在 `dify/`。实验 key 限定为
 `[A-Za-z0-9_.-]{1,120}`，不把任意用户文本直接当作 JSON 测试输入。
+child-loss manifest 的 34 项中只有 sink implementation 被 Git 跟踪，其余 33 项是实验宿主保留的
+gitignored 原件；public clone 能检查脱敏转录和 manifest，不能独立重哈希或复现实验原件。
 
 ### Debugger 草稿：重试会重做整个 HTTP 节点
 
@@ -148,6 +152,7 @@ task 全树没有 byte binding，不能把 checkout commit 当成镜像构建证
 | late-ACK `streaming` 正常控制 | `succeeded` / 3 steps | 1 | 阻塞时 task 未确认且 Redis `unacked=1`；释放后正常确认 |
 | late-ACK `streaming`；effect 后杀整个 active worker 容器 | 后续冷启动重投并 `succeeded` / 3 steps | **2** | 同一 task id 以 `redelivered=true` 重投；恢复工作流但重复副作用 |
 | prefork + late-ACK `streaming` 无故障控制 | `succeeded` / 3 steps | 1 | exact task 的 PID 同时命中唯一 OS child、pool process 与单条 Redis unacked；HTTP 200 释放后清零 |
+| prefork + late-ACK；effect 后只杀 exact pool child | 同一 run `succeeded` / 3 steps | **2** | parent/container 保持；replacement child 上 same task/tag 立即 `redelivered=true`；恢复工作流但重复副作用 |
 
 正式故障样本 `28e83e19-b8af-4344-8421-0b887b27712a` 在 kill 前同时满足三项归因：sink
 已有 `attempt=1`；worker log 含 exact run id；`celery inspect active` 显示该 task 在目标 worker
@@ -179,7 +184,7 @@ early ACK 与 late ACK 的差异由此能直接对齐：early ACK 样本在 work
 **可恢复性与 exactly-once 是两个独立问题。** 整个容器被杀时 Celery parent 也消失，因此这轮能归因于
 Redis broker restoration，不能单独证明 `reject_on_worker_lost` 的即时 requeue 语义。
 
-### Prefork 无故障对照：真实 pool child 已证明，恢复语义尚未测
+### Prefork：先证明真实 pool child，再只杀 exact child
 
 随后单独开的 experiment-only 切片把同一个 task annotation 保留下来，将 visibility timeout 拉长到
 900 秒，并把 worker 显式设成 `prefork` / concurrency 1 / prefetch 1。两次请求前快照都看到同一
@@ -202,10 +207,34 @@ client-name guard 缺陷；orchestration artifact 只证明 workflow request 未
 DB / Redis / sink 快照，也没有单独归档三路径测试 transcript。当前 hash-pinned helper 已改用
 exit code 判断，后续 control-003 在该 helper hash 下完成，但这不反向补齐未归档的测试。
 
-本轮**没有杀任何进程**。`next_fault_eligible=true` 只表示后续可以另开切片去杀 exact child，不是
+这个无故障切片**没有杀任何进程**。`next_fault_eligible=true` 当时只表示后续可以另开切片去杀 exact child，不是
 `reject_on_worker_lost`、requeue、redelivery、恢复时延或 exactly-once 的证据。证据收集后四个相关
 服务以 base Compose 重建；独立快照显示四者无 overlay，API / worker 的 ACK 设置恢复 false / false，
 live Redis channel 恢复 3600 秒，worker 回到 gevent / max 4 / 无 OS child。
+
+2026-09-01 的独立 child-loss 切片在新 WSL boot、新 sink container 和 fresh key 下重新建立全部门槛。
+两个无效尝试被保留：一个在请求前遇到 client container 名称冲突，另一个因 helper 错把初始 Redis
+delivery 的 `redelivered=null` 强制要求为 `false`，都 fail closed 且**没有 kill**。有效样本
+`pub-prefork-child-loss-20260901-002` 在 kill 前同时归档了 attempt 1 已 `fsync`、release 不存在、
+exact run/task active、`acknowledged=false / redelivered=false`、Redis queue 0 / unacked 1 / index 1，
+以及 task `worker_pid` 同时命中唯一 pool process 和 direct OS child。orchestrator 随后立即重采
+`(worker_container_id, child_container_pid, child_host_pid, child_host_start_ticks)`，确认 parent、
+container 与 restart count 未变，只从 WSL host namespace 对该 `child_host_pid` 发 `SIGKILL`；没有杀
+controller 或 container。归档 PID 只作历史证据，绝不能作为后续 fault target。
+
+surviving parent 记录 `WorkerLostError` 后生成 replacement child；同一 task id 与 delivery tag 在新 child
+上以 `redelivered=true` active，Redis 也为 `redelivered=true`，sink attempt 2 已落盘且 release 仍不存在。
+第二次 delivery 比初始 visibility due 早约 **843.906 秒**，所以本样本隔离到了 parent-side
+worker-loss requeue/redelivery，而不是 visibility-timeout restoration。host kill 返回到日志第二次 receive
+约 0.116 秒只是跨时钟观测，不作因果 gate。只有上述 recovery gate 归档后才创建 release；最终同一
+workflow run 以 3 steps 成功、Redis 清空，但 effect 为 **2 次**，数据库中原 effect row 仍为 `running`，
+重放生成的 effect row 才 `succeeded`。结论仍是 **duplicate**，不是 exactly-once，也不是 node-row
+reconciliation。
+
+终态后再次 base-only 重建四服务和 `ssrf_proxy`：四服务 overlay mount 为 0，API / worker ACK 设置恢复
+false / false，live Redis channel 恢复 3600 秒，worker 回到 gevent / max 4 / prefetch 4 / 无 OS child，
+Redis queue/unacked/index 为 0；实验 client 与 sink 已移除，隔离 WSL 与 `Ubuntu` 的最终点时观察均为
+`Stopped`，保留的 VHD、数据库、marker、release 和证据文件没有删除。
 
 这些边界必须一起说：
 
@@ -218,8 +247,9 @@ live Redis channel 恢复 3600 秒，worker 回到 gevent / max 4 / 无 OS child
   timeout 恢复；这描述的是实测配置语义，不是框架缺陷。
 - late-ACK 故障样本证明本次 broker delivery 后来可重投，也证明了重投整个 workflow task 会重复
   已落盘的非幂等副作用；最终 `succeeded` 不能替代 task id、redelivery flag 和 effect count 证据。
-- prefork 正常 control 只证明真实 child attribution、late-ACK 正常路径和可回滚性；没有 child kill，
-  不能借它声称 fault recovery、即时 reject/requeue、超时重投或故障下 exactly-once。
+- prefork 正常 control 只证明真实 child attribution、late-ACK 正常路径和可回滚性；后续独立 child-loss
+  才证明这一个 surviving-parent 样本中的 replacement / same-task redelivery / duplicate recovery。
+  它没有测 visibility-timeout latency，也不提供 exactly-once、一般 prefork 兼容性或生产保证。
 
 对应官方文档：[HTTP Request](https://docs.dify.ai/en/cloud/use-dify/nodes/http-request)、
 [错误处理](https://docs.dify.ai/en/cloud/use-dify/build/predefined-error-handling-logic)、
@@ -237,7 +267,7 @@ live Redis channel 恢复 3600 秒，worker 回到 gevent / max 4 / 无 OS child
 - 崩溃注入 30 次 × 20 步，规模比我自己项目里那个基准（30 × 100）小。
 - Dify 只覆盖本地 1.16.1 的 debugger 草稿，以及独立 Compose 栈中的单 worker Published API
   `blocking` / `streaming`、early ACK、一次 experiment-only late ACK whole-container 对照和一次
-  experiment-only prefork 无故障控制；没有覆盖集群、定时任务、生产流量、只杀 pool child 的
-  `reject_on_worker_lost` 隔离实验，或连续在线的 timeout 延迟测量。
+  experiment-only prefork 无故障控制与一次 exact pool-child-only fault；没有覆盖集群、定时任务、
+  生产流量、连续在线的 timeout redelivery latency 或 child-loss 结果分布。
   debugger worker 结论只适用于约 14 分 24 秒窗口，early-ACK Published fault 只适用于约 3 分钟窗口；
   late-ACK fault 的外部暂停边界必须与其冷启动重投结论一起说明。

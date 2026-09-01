@@ -1,0 +1,181 @@
+{
+  "schema_version": 1,
+  "generated_at_utc": "2026-09-01T03:16:07.5502676+00:00",
+  "evidence_kind": "sha256_source_artifact_manifest",
+  "scope": "Exact prefork child-loss fault, invalid no-kill controls, final recovery state, and full rollback in DifyBench-Isolated-20260828",
+  "artifact_count": 34,
+  "credential_handling": "The manifest contains only repository-relative paths, SHA-256 digests, and byte counts. Published App tokens, Authorization headers, passwords, cookies, full service environments, bootstrap credentials, and raw SSE bodies are excluded from tracked evidence.",
+  "availability_boundary": "Only guarded_loop/dify_sink.py is tracked. The other 33 source artifacts are intentionally gitignored and retained on the experiment host, so a public clone can inspect this manifest and the sanitized evidence but cannot independently rehash or reproduce those local artifacts.",
+  "artifacts": [
+    {
+      "path": "guarded_loop/dify_sink.py",
+      "sha256": "1d09b98355528ee57f3ab932ee0fec0b6fabece72204a6065678410f2ccf27a5",
+      "bytes": 10623
+    },
+    {
+      "path": "_dify_bench/published-20260828/run_published_client.py",
+      "sha256": "7433816db13d1c49b1575cc80b16a367cc2fbc351377220a9cadff6d5b3fd2a4",
+      "bytes": 3998
+    },
+    {
+      "path": "_dify_bench/published-20260828/late-ack-001/capture_state.py",
+      "sha256": "7f3e0a69ac94aa5a697dd4b723526517bdf30bf1460761825bf429deb870f287",
+      "bytes": 11216
+    },
+    {
+      "path": "_dify_bench/published-20260828/late-ack-001/ext_celery.py",
+      "sha256": "6ec8bfb1f47be09efda9d1c6dcef0e3e17f8706e5d5c4007432f75e98931ddcc",
+      "bytes": 13033
+    },
+    {
+      "path": "_dify_bench/published-20260828/prefork-control-001/capture_prefork_state.py",
+      "sha256": "9cfb5c1be939afa382092b599c31ebbce5d8a3e7ffea7102eb211c7b9d9917cf",
+      "bytes": 39103
+    },
+    {
+      "path": "_dify_bench/published-20260828/prefork-control-001/capture_runtime_environment.py",
+      "sha256": "194d1bbcaf08a5361d4abf7839fbdfbb92db89c3b59ccb09ed60a17200c27793",
+      "bytes": 10208
+    },
+    {
+      "path": "_dify_bench/published-20260828/prefork-control-001/inspect_prefork_runtime.py",
+      "sha256": "f6fe63087986aecaaa108e4e27a8979288e67ad09076858a0d875c86778c6bf4",
+      "bytes": 3499
+    },
+    {
+      "path": "_dify_bench/published-20260828/prefork-control-001/docker-compose.prefork.yaml",
+      "sha256": "14160cebbafc3c2ab9661b69bb737b5d687fc22870854feed32e71b4ba3ee65c",
+      "bytes": 2103
+    },
+    {
+      "path": "_dify_bench/published-20260828/prefork-child-loss-20260901/run_prefork_child_loss_fault.py",
+      "sha256": "0a82e2f74bae12ecd3578c92662851ec1f3bf811e3c460ccfa8d5f6120a8a3e8",
+      "bytes": 37496
+    },
+    {
+      "path": "_dify_bench/published-20260828/prefork-child-loss-20260901/baseline-runtime.json",
+      "sha256": "c40fc0842c34ee1be0e968df722a5b0460dbf8f8d135b83f2a9b81ab97dbcaae",
+      "bytes": 11167
+    },
+    {
+      "path": "_dify_bench/published-20260828/prefork-child-loss-20260901/baseline-state.json",
+      "sha256": "dd39121f48e2791f59f9dc7bbd54e6c8ccd745d164e30d57abed1d04b2e3020e",
+      "bytes": 11822
+    },
+    {
+      "path": "_dify_bench/published-20260828/prefork-child-loss-20260901/prefork-runtime-pre-fault.json",
+      "sha256": "6a49b0b7edab33a73419cf0583cfce3e0ef901b25de8659cb41b21cef6c6a324",
+      "bytes": 14448
+    },
+    {
+      "path": "_dify_bench/published-20260828/prefork-child-loss-20260901/topology-1.json",
+      "sha256": "12bf608568c66ed8d899b653d28a75e87235f676e5cb88164779286ab773026f",
+      "bytes": 16014
+    },
+    {
+      "path": "_dify_bench/published-20260828/prefork-child-loss-20260901/topology-2.json",
+      "sha256": "c7f07f9d1f8cc8b6d88e4542d922420871a239b98d4a6312e818ecad4e0a0a8a",
+      "bytes": 16014
+    },
+    {
+      "path": "_dify_bench/published-20260828/prefork-child-loss-20260901/fault-001/orchestration.json",
+      "sha256": "9f6c42a793c11428cf4b285e086813298d1f9317821af82cb7dede725a86598f",
+      "bytes": 1028
+    },
+    {
+      "path": "_dify_bench/published-20260828/prefork-child-loss-20260901/child-loss-fault-001/pre-request.json",
+      "sha256": "5ad8ae82935b80522d52d07b86173174743bbf3f9c73e99c5ece6b2c6cbf8fc3",
+      "bytes": 15446
+    },
+    {
+      "path": "_dify_bench/published-20260828/prefork-child-loss-20260901/child-loss-fault-001/blocked.json",
+      "sha256": "806a568dedca16c855d71ccc399c4653ecb028c2f00cae8c73bb41d9fd0ff895",
+      "bytes": 22131
+    },
+    {
+      "path": "_dify_bench/published-20260828/prefork-child-loss-20260901/child-loss-fault-001/kill-gate.json",
+      "sha256": "e78d3b8162260af5eb7e57f6af536d907cc470b7d7e824216a5e411e297b67de",
+      "bytes": 20664
+    },
+    {
+      "path": "_dify_bench/published-20260828/prefork-child-loss-20260901/child-loss-fault-001/client.json",
+      "sha256": "f84de84c65063491fbe30711fed6800b50d3746345cc877ff579b92887cd9fa9",
+      "bytes": 7948
+    },
+    {
+      "path": "_dify_bench/published-20260828/prefork-child-loss-20260901/child-loss-fault-001/orchestration.json",
+      "sha256": "b6c0f998a13678899ad18f5d508cb4e78ab177388bdcd7bd414e4f567da90293",
+      "bytes": 4785
+    },
+    {
+      "path": "_dify_bench/published-20260828/prefork-child-loss-20260901/child-loss-fault-001/invalid-prekill-final.json",
+      "sha256": "235ad4d07955cef8e2e50bf1bf7949c1faee539bff346d6094ac7671010bd55d",
+      "bytes": 23399
+    },
+    {
+      "path": "_dify_bench/published-20260828/prefork-child-loss-20260901/child-loss-fault-002/pre-request.json",
+      "sha256": "de2037afc433adfe62c5501c4d3401743d06b48494868dca8a1e1cd3145d3260",
+      "bytes": 16197
+    },
+    {
+      "path": "_dify_bench/published-20260828/prefork-child-loss-20260901/child-loss-fault-002/blocked.json",
+      "sha256": "3f6aa334627467cc2cfd702652066b7300513bd85ae224de1b65fbf6acf9a287",
+      "bytes": 22886
+    },
+    {
+      "path": "_dify_bench/published-20260828/prefork-child-loss-20260901/child-loss-fault-002/kill-gate.json",
+      "sha256": "99ad37a68b687606ba4e70e5abbbc7c0dd2f725c7f33dd7d4c2081c0ab8fceb6",
+      "bytes": 20688
+    },
+    {
+      "path": "_dify_bench/published-20260828/prefork-child-loss-20260901/child-loss-fault-002/kill-immediate.json",
+      "sha256": "486eb9c3bf494b9d4781d5d804088121d3c47af88034cbcf395436e99e2bd5c7",
+      "bytes": 2537
+    },
+    {
+      "path": "_dify_bench/published-20260828/prefork-child-loss-20260901/child-loss-fault-002/post-kill-0000.json",
+      "sha256": "161717e453b249dac8e44a1ec50c3344fcbeeca39befab805dd3132c9b7a57cf",
+      "bytes": 22482
+    },
+    {
+      "path": "_dify_bench/published-20260828/prefork-child-loss-20260901/child-loss-fault-002/client.json",
+      "sha256": "f6e0e3ea08fb0e230aed7c83145301c7256667ae8619320342bf6e3334962348",
+      "bytes": 10395
+    },
+    {
+      "path": "_dify_bench/published-20260828/prefork-child-loss-20260901/child-loss-fault-002/final.json",
+      "sha256": "e655fdf156c3ec02c02328ff1ec238cabd0762f9b1ea758c87f0674ab69f20b7",
+      "bytes": 20049
+    },
+    {
+      "path": "_dify_bench/published-20260828/prefork-child-loss-20260901/child-loss-fault-002/orchestration.json",
+      "sha256": "47954c11308d03c492df7f200ba2ae954ae849249688448af758e9b868f8e5af",
+      "bytes": 7585
+    },
+    {
+      "path": "_dify_bench/published-20260828/prefork-child-loss-20260901/child-loss-fault-002/worker-fault-log-extract.json",
+      "sha256": "849ad9a969107effc9a129b318a417e363f59b59b80eae574cb79e11ae6d108e",
+      "bytes": 1787
+    },
+    {
+      "path": "_dify_bench/published-20260828/prefork-child-loss-20260901/post-fault-runtime.json",
+      "sha256": "5b9e58899748b6c7391a7067c5282b0443ce3923883caeb902cb58e15fc57695",
+      "bytes": 14449
+    },
+    {
+      "path": "_dify_bench/published-20260828/prefork-child-loss-20260901/rollback-runtime.json",
+      "sha256": "03ebf5230cf862b441ab621ec4b3d8356605de40b75337fa8df7966189c470b1",
+      "bytes": 11177
+    },
+    {
+      "path": "_dify_bench/published-20260828/prefork-child-loss-20260901/post-rollback-state.json",
+      "sha256": "ec49e52281a2089a07335178e21fb983e36dc99edbce8bf9a4d8cce8c64d71b7",
+      "bytes": 13344
+    },
+    {
+      "path": "_dify_bench/published-20260828/prefork-child-loss-20260901/final-host-observation.json",
+      "sha256": "b1c666efbb4f2c381f115cc3273db982c968caeeff53ce9f316ea066c3dd69c8",
+      "bytes": 535
+    }
+  ]
+}

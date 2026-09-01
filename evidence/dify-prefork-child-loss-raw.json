@@ -1,0 +1,462 @@
+{
+  "schema_version": 1,
+  "captured_at_utc": "2026-09-01T03:16:07.5502676+00:00",
+  "evidence_kind": "sanitized_raw_snapshot",
+  "scope": {
+    "system": "Local Dify 1.16.1 Published Service API streaming workflow",
+    "experiment": "Experiment-only exact prefork pool-child loss under task-scoped late ACK and reject_on_worker_lost",
+    "fault_scope": "One revalidated prefork child_host_pid only",
+    "fault_injected_in_valid_attempt": true,
+    "controller_or_container_killed": false
+  },
+  "evidence_window": {
+    "baseline_capture_utc": "2026-09-01T10:28:25.058479+08:00",
+    "valid_attempt_started_utc": "2026-09-01T10:59:10.718814+08:00",
+    "valid_attempt_final_capture_utc": "2026-09-01T11:01:15.180889+08:00",
+    "post_fault_runtime_capture_utc": "2026-09-01T11:03:34.716365+08:00",
+    "rollback_runtime_capture_utc": "2026-09-01T11:08:37.309718+08:00",
+    "post_rollback_state_capture_utc": "2026-09-01T11:09:53.932772+08:00",
+    "final_host_observation_utc": "2026-09-01T03:14:49.7087184+00:00"
+  },
+  "provenance": {
+    "source_artifact_manifest": "evidence/dify-prefork-child-loss-manifest.json",
+    "source_artifact_manifest_sha256": "c3687f5da1a65c7a45c6fe045ff9d57b9c0f3bd6967fc5663501920d2dd1f16e",
+    "ignored_artifact_root": "_dify_bench/published-20260828/prefork-child-loss-20260901",
+    "credential_handling": "Tracked evidence omits the Published App token, Authorization headers, passwords, cookies, full service environments, bootstrap credentials, and raw SSE bodies. Runtime environment fields are allowlisted; payloads and rendered Compose content are represented by hashes where appropriate.",
+    "portable_clone_boundary": "The ignored source artifacts remain local. A clone receives this sanitized transcription and the path/hash/size manifest, not the ignored artifacts themselves."
+  },
+  "environment": {
+    "dify_version": "1.16.1",
+    "deployment": "Docker Compose in dedicated WSL distribution DifyBench-Isolated-20260828",
+    "compose_project": "dify_pub_20260828",
+    "runtime_image": "langgenius/dify-api:1.16.1",
+    "runtime_image_id": "sha256:48295be2027d55f7791231c32b1e585a03eed42e3f88d014ae39ee15eb6362cb",
+    "semantic_source_checkout_commit": "5456d4d56e5701999bc8da2a2c97f5ae9b3b78d3",
+    "semantic_source_checkout_role": "semantic_reference_not_runtime_byte_identity",
+    "wsl_boot_id": "fa91dc2b-8dcf-4d25-a9ae-66cb934b009d",
+    "compose_default_network_id": "b346a4c948eae36bf56713e561041889d1ddfeb62e05f19679fd71cdd1e1febe",
+    "models_or_external_api_keys_required": false,
+    "preflight_observations": {
+      "only_isolated_distribution_started": true,
+      "ubuntu_distribution_remained_stopped": true,
+      "bridge_rule_present": true,
+      "cross_container_redis_ping": "PONG",
+      "api_health": "healthy",
+      "worker_ready": true,
+      "sink_health": "ok",
+      "observation_grade": "Operator terminal preflight; the runtime and state captures provide the structured configuration, process, and broker evidence."
+    }
+  },
+  "baseline": {
+    "compose_files": [
+      "/home/user/dify-published-20260828/docker/docker-compose.yaml"
+    ],
+    "api_and_worker_effective": {
+      "task_acks_late": false,
+      "task_reject_on_worker_lost": false,
+      "broker_transport_options": {},
+      "result_backend_transport_options": {},
+      "global_visibility_timeout": null,
+      "live_redis_channel_visibility_timeout": 3600
+    },
+    "worker": {
+      "pool": "celery.concurrency.gevent:TaskPool",
+      "max_concurrency": 4,
+      "prefetch_count": 4,
+      "direct_os_child_count": 0,
+      "restart_count": 0
+    },
+    "redis_queue_unacked_index": [
+      0,
+      0,
+      0
+    ]
+  },
+  "experimental_runtime": {
+    "compose_files": [
+      "/home/user/dify-published-20260828/docker/docker-compose.yaml",
+      "/mnt/c/Users/Alienware/agent-crash-recovery-bench/_dify_bench/published-20260828/prefork-control-001/docker-compose.prefork.yaml"
+    ],
+    "mounted_services": [
+      "api",
+      "api_websocket",
+      "worker",
+      "worker_beat"
+    ],
+    "overlay_mounts_per_service": 1,
+    "overlay_mount_read_only": true,
+    "overlay_ext_celery_sha256": "6ec8bfb1f47be09efda9d1c6dcef0e3e17f8706e5d5c4007432f75e98931ddcc",
+    "compose_override_sha256": "14160cebbafc3c2ab9661b69bb737b5d687fc22870854feed32e71b4ba3ee65c",
+    "api_and_worker_exact_task_effective": {
+      "task_name": "tasks.app_generate.workflow_execute_task.workflow_based_app_execution_task",
+      "task_acks_late": true,
+      "task_reject_on_worker_lost": true,
+      "task_acks_on_failure_or_timeout": true,
+      "task_ignore_result": true,
+      "broker_transport_visibility_timeout": 900,
+      "result_backend_visibility_timeout": 900,
+      "global_visibility_timeout": 900,
+      "live_redis_channel_visibility_timeout": 900
+    },
+    "worker": {
+      "pool": "celery.concurrency.prefork:TaskPool",
+      "max_concurrency": 1,
+      "prefetch_count": 1,
+      "controller_container_pid": 1,
+      "restart_count": 0
+    },
+    "service_container_ids": {
+      "api": "d4b36e07024c876d9caedcea053220cd47983ff04bdd1464a34d85fc3c374e8b",
+      "api_websocket": "304c88df9d7fa1134d1b681604d62aed9804d6be35e5ff1cc564e9c2c068141a",
+      "worker": "251af070b3c45b2c7d28b928c0047769cb0235e38143908ae2cbbda39024455a",
+      "worker_beat": "e80068bbaa5ad256a3a05f20a7c0e892a1f08f0f63d916d525145b53b536ae81"
+    },
+    "stable_pre_request_topology": {
+      "snapshot_count": 2,
+      "first_capture_started_utc": "2026-09-01T10:46:10.047105+08:00",
+      "second_capture_finished_utc": "2026-09-01T10:47:41.336436+08:00",
+      "worker_container_id": "251af070b3c45b2c7d28b928c0047769cb0235e38143908ae2cbbda39024455a",
+      "parent": {
+        "container_pid": 1,
+        "host_pid": 39146,
+        "host_start_ticks": 106732
+      },
+      "only_direct_child": {
+        "container_pid": 147,
+        "host_pid": 40391,
+        "host_start_ticks": 109520
+      },
+      "pool_processes": [
+        147
+      ],
+      "prefork_topology_pass_in_both": true,
+      "identity_note": "This stable no-request child later completed an invalid normal cleanup and was naturally replaced. It was not the fault target and must never be reused as a future PID."
+    },
+    "same_runtime_after_fault_before_rollback": true
+  },
+  "invalidated_attempts": [
+    {
+      "attempt": "fault-001",
+      "input_key": "pub-prefork-child-loss-20260901-001",
+      "classification": "invalid_no_request",
+      "fault_injected": false,
+      "release_created": false,
+      "request_launched": false,
+      "reason": "The requested client container name collided with a retained exited container before any workflow request, run, effect, or fault action. No key was consumed by Dify and no kill occurred."
+    },
+    {
+      "attempt": "child-loss-fault-001",
+      "input_key": "pub-prefork-child-loss-20260901-001",
+      "workflow_run_id": "f51411e2-0ccd-4454-80d9-6ebacec0326e",
+      "celery_task_id": "aee2eb54-4e69-4e75-9567-c94712cd23dd",
+      "classification": "invalid_no_kill",
+      "failure_class": "helper_overconstrained_initial_redis_redelivered_field",
+      "fault_injected": false,
+      "reason": "Active inspect correctly reported redelivered=false while the initial decoded Redis delivery field was null. The first helper incorrectly required the Redis field itself to be false and failed closed before kill.",
+      "cleanup": {
+        "emergency_release_created": true,
+        "workflow_status": "succeeded",
+        "total_steps": 3,
+        "effect_attempts": [
+          1
+        ],
+        "active_task_count": 0,
+        "redis_queue_unacked_index": [
+          0,
+          0,
+          0
+        ],
+        "same_child_continuity": true
+      },
+      "repair": "The valid helper revision accepts null or false for the initial Redis delivery field while still requiring explicit true on the recovery delivery."
+    }
+  ],
+  "valid_attempt": {
+    "attempt": "child-loss-fault-002",
+    "classification": "valid_prefork_child_loss_redelivery_duplicate_recovered",
+    "input_key": "pub-prefork-child-loss-20260901-002",
+    "workflow_run_id": "55cb064a-3558-4284-a6ae-572b74fcaf20",
+    "celery_task_id": "e90f7d70-774f-4a42-a87a-a6b552e28e45",
+    "initial_delivery_tag": "8e69a6e0-eadc-4b22-b145-edef3821c628",
+    "blocked_attribution": {
+      "capture_started_at_utc": "2026-09-01T10:59:35.679768+08:00",
+      "capture_finished_at_utc": "2026-09-01T10:59:58.058015+08:00",
+      "workflow_status": "running",
+      "node_statuses": {
+        "start": "succeeded",
+        "effect": "running"
+      },
+      "sink": {
+        "attempt_1_fsynced": true,
+        "attempt_1_applied_at_epoch": 1788231575.6977446,
+        "marker_exists": true,
+        "release_exists": false
+      },
+      "active_task": {
+        "count": 1,
+        "worker_pid": 1218,
+        "acknowledged": false,
+        "redelivered": false,
+        "task_name_matches": true,
+        "workflow_run_id_matches": true,
+        "input_key_matches": true,
+        "response_mode": "streaming"
+      },
+      "redis": {
+        "atomic_and_consistent": true,
+        "queue_len": 0,
+        "unacked_hlen": 1,
+        "unacked_index_zcard": 1,
+        "target_delivery_count": 1,
+        "task_id": "e90f7d70-774f-4a42-a87a-a6b552e28e45",
+        "delivery_tag": "8e69a6e0-eadc-4b22-b145-edef3821c628",
+        "redelivered_field": null,
+        "score_epoch": 1788231575.4850268,
+        "visibility_due_epoch": 1788232475.4850268
+      },
+      "worker_container": {
+        "id": "251af070b3c45b2c7d28b928c0047769cb0235e38143908ae2cbbda39024455a",
+        "restart_count": 0
+      },
+      "parent": {
+        "container_pid": 1,
+        "host_pid": 39146,
+        "host_ppid": 39102,
+        "host_start_ticks": 106732
+      },
+      "fault_target_child": {
+        "container_pid": 1218,
+        "host_pid": 76915,
+        "host_ppid": 39146,
+        "host_start_ticks": 205391
+      },
+      "pool_processes": [
+        1218
+      ],
+      "all_attribution_gates_passed": true
+    },
+    "immediate_pre_kill_recapture": {
+      "captured_at_utc": "2026-09-01T11:00:30.683252+08:00",
+      "worker_container_unchanged": true,
+      "parent_tuple_unchanged": true,
+      "child_tuple_unchanged": true,
+      "target": {
+        "worker_container_id": "251af070b3c45b2c7d28b928c0047769cb0235e38143908ae2cbbda39024455a",
+        "child_container_pid": 1218,
+        "child_host_pid": 76915,
+        "child_host_start_ticks": 205391
+      }
+    },
+    "fault_action": {
+      "command_semantics": "From the WSL host PID namespace, send SIGKILL only to the immediately revalidated child_host_pid 76915.",
+      "started_at_utc": "2026-09-01T11:00:31.366457+08:00",
+      "finished_at_utc": "2026-09-01T11:00:31.462638+08:00",
+      "signal": "SIGKILL",
+      "controller_killed": false,
+      "container_killed_or_restarted": false
+    },
+    "recovery_gate": {
+      "capture_started_at_utc": "2026-09-01T11:00:31.554981+08:00",
+      "capture_finished_at_utc": "2026-09-01T11:00:52.117731+08:00",
+      "worker_container_continuity": true,
+      "parent_identity_continuity": true,
+      "worker_restart_count": 0,
+      "replacement_child": {
+        "container_pid": 1677,
+        "host_pid": 80531,
+        "host_ppid": 39146,
+        "host_start_ticks": 214899
+      },
+      "active_task": {
+        "count": 1,
+        "same_task_id": true,
+        "worker_pid": 1677,
+        "acknowledged": false,
+        "redelivered": true,
+        "bound_to_replacement_child": true
+      },
+      "redis": {
+        "queue_len": 0,
+        "unacked_hlen": 1,
+        "unacked_index_zcard": 1,
+        "same_task_id": true,
+        "same_delivery_tag": true,
+        "redelivered": true,
+        "new_score_epoch": 1788231631.5791066,
+        "new_visibility_due_epoch": 1788232531.5791066
+      },
+      "sink_attempts": [
+        1,
+        2
+      ],
+      "attempt_2_applied_at_epoch": 1788231631.8203769,
+      "release_absent_during_capture": true,
+      "recovery_release_gate": true
+    },
+    "release": {
+      "created_only_after_recovery_gate": true,
+      "content": "2026-09-01T11:00:53.241436+08:00",
+      "filesystem_stat_utc": "2026-09-01T11:00:53.240129+08:00",
+      "purpose": "recovery_gate_after_archived_same_task_redelivery_and_attempt_2",
+      "cross_clock_order_used_as_causal_gate": false
+    },
+    "final": {
+      "capture_finished_at_utc": "2026-09-01T11:01:15.180889+08:00",
+      "client_exit_code": 0,
+      "outer_api_http_status": 200,
+      "terminal_sse_status": "succeeded",
+      "terminal_workflow_run_id_matches": true,
+      "inner_effect_http_status": 200,
+      "inner_effect_attempt": 2,
+      "inner_effect_released": true,
+      "workflow_status": "succeeded",
+      "workflow_total_steps": 3,
+      "effect_attempts": [
+        1,
+        2
+      ],
+      "active_task_count": 0,
+      "redis_queue_unacked_index": [
+        0,
+        0,
+        0
+      ],
+      "database_node_rows": [
+        {
+          "node_id": "start",
+          "attempt": 1,
+          "status": "succeeded"
+        },
+        {
+          "node_id": "start",
+          "attempt": 2,
+          "status": "succeeded"
+        },
+        {
+          "node_id": "effect",
+          "attempt": 1,
+          "status": "running"
+        },
+        {
+          "node_id": "effect",
+          "attempt": 2,
+          "status": "succeeded"
+        },
+        {
+          "node_id": "end",
+          "attempt": 2,
+          "status": "succeeded"
+        }
+      ]
+    },
+    "decisive_worker_log_sequence": [
+      "Initial exact task received.",
+      "ForkPoolWorker-2 PID 1218 exited with signal 9 (SIGKILL).",
+      "WorkerLostError recorded by the surviving parent.",
+      "The same exact task id was received again.",
+      "The same exact task id succeeded."
+    ],
+    "timing_observations": {
+      "initial_task_received_log_utc": "2026-09-01T02:59:35.485Z",
+      "worker_lost_error_log_utc": "2026-09-01T03:00:31.173Z",
+      "redelivered_task_received_log_utc": "2026-09-01T03:00:31.579Z",
+      "host_kill_command_finished_to_second_receive_observed_seconds": 0.116362,
+      "second_delivery_before_initial_visibility_due_seconds": 843.90592,
+      "interpretation": "Parent/container continuity, WorkerLostError, same-tag redelivery, and receipt hundreds of seconds before the recorded initial visibility due identify the surviving-parent worker-loss requeue path in this run rather than visibility-timeout restoration. The subsecond host/log difference is retained only as an approximate cross-clock observation."
+    },
+    "semantic_result": {
+      "recovery": true,
+      "same_workflow_run_reached_terminal_success": true,
+      "duplicate_side_effect": true,
+      "exactly_once": false,
+      "classification_reason": "The surviving prefork parent replaced the killed child and the broker redelivered the same task and delivery tag. Re-executing the whole workflow task repeated the already-fsynced HTTP effect before the same run completed."
+    }
+  },
+  "rollback": {
+    "base_compose_only": true,
+    "captured_at_utc": "2026-09-01T11:08:37.309718+08:00",
+    "wsl_boot_id_matches_fault": true,
+    "compose_files": [
+      "/home/user/dify-published-20260828/docker/docker-compose.yaml"
+    ],
+    "rendered_compose_sha256": "d74775d575f4988b7c05a281a3cc89fa6c7f2a167b42291b9f176517db71cf9b",
+    "services": {
+      "api": "654b5c144561c33311b8cfa7fbed77c6865a9a8370520924cd881d68bb79ee63",
+      "api_websocket": "5aa8ffda6f5bb659793101c667aef5a4cc4d8627d4a3912efb7966d06a8b676d",
+      "worker": "cd91bb668df1a20495610deeaa0912f85661d441f3fb43426984aeba0a47cea8",
+      "worker_beat": "6f5c4b74559457957694ed54453779505f681566ec27dd3cded8e17c1705b32b"
+    },
+    "all_four_services_restart_count": 0,
+    "all_four_services_overlay_mount_count": 0,
+    "all_four_services_base_ext_celery_sha256": "b380fb2194f6e0e4251ec6b9fe0d0f04c6cc2307e2ee35aa8ef0523f6ddc4ad7",
+    "api_and_worker_effective": {
+      "task_acks_late": false,
+      "task_reject_on_worker_lost": false,
+      "broker_transport_options": {},
+      "result_backend_transport_options": {},
+      "global_visibility_timeout": null,
+      "live_redis_channel_visibility_timeout": 3600
+    },
+    "worker": {
+      "pool": "celery.concurrency.gevent:TaskPool",
+      "max_concurrency": 4,
+      "prefetch_count": 4,
+      "direct_os_child_count": 0,
+      "ready": true
+    },
+    "api_health": "healthy",
+    "ssrf_proxy_allow_private_domains": "",
+    "post_rollback_state": {
+      "workflow_status": "succeeded",
+      "effect_attempts": [
+        1,
+        2
+      ],
+      "active_task_count": 0,
+      "redis_queue_unacked_index": [
+        0,
+        0,
+        0
+      ]
+    },
+    "experiment_client_containers_removed": [
+      "dify-pub-client-child-loss-fault-001",
+      "dify-pub-client-child-loss-fault-002"
+    ],
+    "experiment_sink_container_removed": "dify-pub-child-loss-sink-20260901",
+    "retained_evidence_deleted": false,
+    "final_host_observation": {
+      "observed_at_utc": "2026-09-01T03:14:49.7087184+00:00",
+      "wsl_distribution_states": {
+        "DifyBench-Isolated-20260828": "Stopped",
+        "Ubuntu": "Stopped"
+      },
+      "scope": "Point-in-time operator terminal observation after keeper exit and explicit isolated-distribution termination."
+    }
+  },
+  "derived_assertions": {
+    "exact_prefork_child_attribution_before_kill": "pass",
+    "only_revalidated_child_host_pid_killed": "pass",
+    "parent_and_container_survived": "pass",
+    "replacement_child_observed": "pass",
+    "same_task_and_delivery_tag_redelivered": "pass",
+    "attempt_2_archived_before_release": "pass",
+    "same_workflow_run_recovered": "pass",
+    "duplicate_side_effect_observed": "pass",
+    "exactly_once_proven": false,
+    "full_runtime_rollback": "pass",
+    "final_wsl_stop_observed": "pass"
+  },
+  "interpretation_limits": [
+    "This is one valid local Dify 1.16.1 run, one worker, concurrency 1, and one exact child kill. It is not a distribution, latency benchmark, cluster, throughput, or production reliability guarantee.",
+    "The fixed checkout is a semantic reference. Runtime identity is the image ID plus selected runtime and overlay hashes; the image build commit and the full controller/service/task tree were not byte-bound.",
+    "The prefork worker still ran Dify's gevent-related gRPC and psycopg2 initialization, so this does not establish general prefork compatibility.",
+    "Active inspect redelivered=false and initial decoded Redis redelivered=null are distinct valid observations; the valid helper does not collapse them.",
+    "The surviving-parent path produced redelivery hundreds of seconds before visibility due, so this run did not measure visibility-timeout restoration latency.",
+    "The original effect node row remains running after the replayed effect row and workflow succeeded. Terminal workflow success is therefore not evidence of exactly-once execution or per-node row reconciliation.",
+    "The sink's effect pid is the sink container process and is unrelated to the Celery pool-child PID.",
+    "The release-file stat appears about 0.314 seconds after the client clock's finish time. Cross-clock subsecond order is not a causal gate; the returned inner effect body released=true is the authoritative release evidence.",
+    "Every recorded process ID is historical evidence only and must never be reused as a future fault target.",
+    "This is a framework benchmark and must not be presented as production experience."
+  ]
+}

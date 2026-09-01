@@ -1,0 +1,146 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-09-01",
+  "evidence_kind": "curated_summary",
+  "raw_snapshot": "evidence/dify-prefork-child-loss-raw.json",
+  "raw_snapshot_sha256": "aad6a43b7ebd50ce947326af7d17af5d95f362dfe10c3deb318aed0fe651163c",
+  "source_artifact_manifest": "evidence/dify-prefork-child-loss-manifest.json",
+  "source_artifact_manifest_sha256": "c3687f5da1a65c7a45c6fe045ff9d57b9c0f3bd6967fc5663501920d2dd1f16e",
+  "source_availability_boundary": "Thirty-three of the 34 manifest entries are intentionally gitignored and retained only on the experiment host. A public clone can verify the tracked raw/report linkage and inspect the path/hash/size manifest, but cannot independently rehash or reproduce those local source artifacts.",
+  "prior_prefork_control_report": "evidence/dify-prefork-control-report.json",
+  "classification": "valid_prefork_child_loss_redelivery_duplicate_recovered",
+  "environment": {
+    "dify_version": "1.16.1",
+    "deployment": "Isolated local Docker Compose stack in DifyBench-Isolated-20260828",
+    "runtime_image_id": "sha256:48295be2027d55f7791231c32b1e585a03eed42e3f88d014ae39ee15eb6362cb",
+    "wsl_boot_id": "fa91dc2b-8dcf-4d25-a9ae-66cb934b009d",
+    "compose_project": "dify_pub_20260828",
+    "models_or_external_api_keys_required": false
+  },
+  "measured_configuration": {
+    "task_scope": "Only tasks.app_generate.workflow_execute_task.workflow_based_app_execution_task received the experiment annotation.",
+    "task_acks_late_effective": true,
+    "task_reject_on_worker_lost_effective": true,
+    "visibility_timeout_seconds": 900,
+    "worker_pool": "celery.concurrency.prefork:TaskPool",
+    "worker_concurrency": 1,
+    "worker_prefetch_count": 1,
+    "worker_restart_count": 0
+  },
+  "valid_attempt": {
+    "input_key": "pub-prefork-child-loss-20260901-002",
+    "workflow_run_id": "55cb064a-3558-4284-a6ae-572b74fcaf20",
+    "celery_task_id": "e90f7d70-774f-4a42-a87a-a6b552e28e45",
+    "initial_delivery_tag": "8e69a6e0-eadc-4b22-b145-edef3821c628",
+    "pre_kill_gates": {
+      "attempt_1_fsynced": true,
+      "release_absent": true,
+      "exact_run_and_task_active": true,
+      "active_acknowledged": false,
+      "active_redelivered": false,
+      "redis_queue_unacked_index": [
+        0,
+        1,
+        1
+      ],
+      "one_matching_redis_delivery": true,
+      "task_worker_pid_matches_only_pool_process": true,
+      "task_worker_pid_matches_only_direct_os_child": true,
+      "worker_container_running_without_restart": true,
+      "all_attribution_gates_passed": true
+    },
+    "fault_target": {
+      "worker_container_id": "251af070b3c45b2c7d28b928c0047769cb0235e38143908ae2cbbda39024455a",
+      "child_container_pid": 1218,
+      "child_host_pid": 76915,
+      "child_host_start_ticks": 205391,
+      "immediately_revalidated_before_kill": true,
+      "signal": "SIGKILL",
+      "controller_or_container_killed": false
+    },
+    "recovery": {
+      "worker_container_continuity": true,
+      "parent_identity_continuity": true,
+      "replacement_child_container_pid": 1677,
+      "same_task_id_active_on_replacement": true,
+      "active_redelivered": true,
+      "same_redis_delivery_tag": true,
+      "redis_redelivered": true,
+      "attempt_2_fsynced_before_release": true,
+      "release_absent_until_recovery_gate": true,
+      "received_before_initial_visibility_due_seconds": 843.90592,
+      "path_interpretation": "The surviving parent recorded WorkerLostError and the same delivery returned hundreds of seconds before its initial visibility due. This run therefore exercised the parent-side worker-loss requeue/redelivery path, not visibility-timeout restoration."
+    },
+    "final": {
+      "outer_api_http_status": 200,
+      "inner_effect_http_status": 200,
+      "inner_effect_attempt": 2,
+      "inner_effect_released": true,
+      "workflow_status": "succeeded",
+      "workflow_total_steps": 3,
+      "effect_attempts": [
+        1,
+        2
+      ],
+      "redis_queue_unacked_index": [
+        0,
+        0,
+        0
+      ],
+      "original_effect_node_status": "running",
+      "replayed_effect_node_status": "succeeded",
+      "exactly_once": false
+    }
+  },
+  "invalidated_attempts": [
+    {
+      "attempt": "fault-001",
+      "classification": "invalid_no_request",
+      "fault_injected": false,
+      "reason": "A retained exited client-container name collided before any request, run, effect, or kill."
+    },
+    {
+      "attempt": "child-loss-fault-001",
+      "classification": "invalid_no_kill",
+      "fault_injected": false,
+      "reason": "The first helper overconstrained the initial decoded Redis redelivered field to false even though null is valid while active inspect reports false. It failed closed, released only for cleanup, completed with one effect, and cleared Redis."
+    }
+  ],
+  "rollback": {
+    "base_compose_only": true,
+    "four_services_without_overlay": true,
+    "api_and_worker_task_acks_late_effective": false,
+    "api_and_worker_task_reject_on_worker_lost_effective": false,
+    "api_and_worker_transport_options": {},
+    "live_redis_channel_visibility_timeout_seconds": 3600,
+    "worker_pool": "celery.concurrency.gevent:TaskPool",
+    "worker_max_concurrency": 4,
+    "worker_prefetch_count": 4,
+    "worker_direct_os_child_count": 0,
+    "api_healthy": true,
+    "worker_ready": true,
+    "redis_cleared": true,
+    "ssrf_private_domain_allowlist_cleared": true,
+    "experiment_clients_removed": true,
+    "experiment_sink_removed": true,
+    "retained_evidence_deleted": false,
+    "final_point_in_time_wsl_states": {
+      "DifyBench-Isolated-20260828": "Stopped",
+      "Ubuntu": "Stopped"
+    }
+  },
+  "key_finding": "With the exact Published streaming task unacknowledged on one real prefork child, killing only that revalidated child left the Celery parent and worker container alive. The parent observed WorkerLostError, replaced the child, and caused the same task and delivery tag to return as redelivered long before Redis visibility timeout. The same workflow run recovered to succeeded, but the already-fsynced HTTP side effect ran twice and the original effect row remained running. Late ACK plus reject_on_worker_lost recovered execution; it did not provide exactly-once side effects or per-node row reconciliation.",
+  "what_this_proves": [
+    "The local Dify 1.16.1 prefork parent can survive an exact pool-child SIGKILL and replace the child.",
+    "For this exact task-scoped late-ACK configuration, parent-side worker-loss handling can requeue the same delivery immediately rather than waiting for Redis visibility timeout.",
+    "Replaying the whole Published workflow task can recover the workflow run while duplicating an already persisted non-idempotent HTTP effect."
+  ],
+  "does_not_prove": [
+    "Exactly-once execution, automatic side-effect deduplication, or node-row reconciliation",
+    "A recovery latency distribution or Redis visibility-timeout restoration timing",
+    "General prefork compatibility, stability, throughput, plugin, model-provider, gRPC-workload, scheduler, cluster, or production behavior",
+    "That any archived process ID is safe to reuse as a future fault target"
+  ],
+  "timing_note": "The worker-log sequence is decisive, but subsecond host/log and client/filesystem ordering crosses clocks. The approximately 0.116-second kill-return-to-second-receive value and apparent release-stat/client order are observations, not causal gates.",
+  "single_next_action": "No further live Dify fault is authorized by this slice. Preserve the stopped environment and retained evidence. Any idempotency mitigation or additional fault class must be a separately scoped task with fresh identifiers and attribution gates."
+}
