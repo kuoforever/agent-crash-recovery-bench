@@ -204,6 +204,26 @@ allowlisted env、mount count 0、target hashes，以及 API / worker effective 
 `pub-lateack-control-001` 因 client container entrypoint 错误被判无效；它没有创建 run、task 或 effect，
 也没有 Redis queue/unacked，不能算作框架行为。
 
+## 离线证据工程化（2026-09-01）
+
+exact child-loss evidence merge 后的独立 tranche 只修改仓库文件、运行 offline fixture/tests；没有调用
+WSL、Docker、Dify API、sink，也没有复用历史 PID 或重跑 fault。它发布了：
+
+- 通用 fail-closed child-loss state machine 与唯一的 `offline_replay` adapter；真实平台 capture、kill、
+  release adapter 不在仓库中。fault outcome 为 `not_applied / applied / unknown`，release request/receipt
+  绑定 `run_id / task_id / delivery_tag`；invalid identity gate 不自动 release。fixture capture budget 不是
+  visibility deadline，因此未见重投不会被表述为 timeout 结论。
+- report / raw / manifest 的 tracked Draft 2020-12 JSON Schema，以及拒绝 in-place overwrite 的递归
+  sanitizer。verifier 首次运行也发现 raw 中 4 个 compose 绝对路径并将其替换为带角色的 redaction label，
+  随后按 manifest → raw → report 顺序重算 SHA-256 linkage。
+- manifest v2 的 `tracked_paths` / `local_only_prefixes` policy 与 `tracked=1 / local_only=33` count。
+  实验宿主有原件时 34/34 可重哈希；模拟 public clone 时只有 sink 1 项 `verified`，另外 33 项逐项
+  `unavailable`，bundle 为 `partial / complete_source_verification=false`。tracked source 缺失则是
+  `failed`，不是另一个 `unavailable`。
+
+上述工具提高的是证据发布与复核质量，不增加 Dify fault 样本量，也不改变原来的 duplicate recovery
+classification。sanitizer 按已知 key/pattern 工作，仍需发布前人工 secret review。
+
 ## 仍需注意
 
 - `crash-worker-001` 是有意留下的悬挂运行，用来保存崩溃证据；不是待恢复的业务任务。

@@ -13,7 +13,10 @@ dist/
 _bench/
 _ci_bench/
 _ci_eval/
+_ci_eval_tooling/
+_ci_harness/
 _eval/
+_harness/
 _llm/
 _smoke/
 _dify_bench/

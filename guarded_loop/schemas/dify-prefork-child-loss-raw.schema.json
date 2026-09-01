@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/kuoforever/agent-crash-recovery-bench/schemas/dify-prefork-child-loss-raw-v1.json",
+  "title": "Sanitized exact prefork child-loss raw snapshot",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "captured_at_utc",
+    "evidence_kind",
+    "scope",
+    "evidence_window",
+    "provenance",
+    "environment",
+    "baseline",
+    "experimental_runtime",
+    "invalidated_attempts",
+    "valid_attempt",
+    "rollback",
+    "derived_assertions",
+    "interpretation_limits"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "captured_at_utc": { "type": "string", "format": "date-time" },
+    "evidence_kind": { "const": "sanitized_raw_snapshot" },
+    "scope": { "type": "object", "minProperties": 1 },
+    "evidence_window": { "type": "object", "minProperties": 1 },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_artifact_manifest",
+        "source_artifact_manifest_sha256",
+        "ignored_artifact_root",
+        "credential_handling",
+        "portable_clone_boundary"
+      ],
+      "properties": {
+        "source_artifact_manifest": { "$ref": "#/$defs/repoPath" },
+        "source_artifact_manifest_sha256": { "$ref": "#/$defs/sha256" },
+        "ignored_artifact_root": { "$ref": "#/$defs/repoPath" },
+        "credential_handling": { "type": "string", "minLength": 1 },
+        "portable_clone_boundary": { "type": "string", "minLength": 1 }
+      }
+    },
+    "environment": { "type": "object", "minProperties": 1 },
+    "baseline": { "type": "object", "minProperties": 1 },
+    "experimental_runtime": { "type": "object", "minProperties": 1 },
+    "invalidated_attempts": { "type": "array", "minItems": 1, "items": { "type": "object" } },
+    "valid_attempt": {
+      "type": "object",
+      "required": [
+        "attempt",
+        "classification",
+        "input_key",
+        "workflow_run_id",
+        "celery_task_id",
+        "initial_delivery_tag",
+        "blocked_attribution",
+        "immediate_pre_kill_recapture",
+        "fault_action",
+        "recovery_gate",
+        "release",
+        "final",
+        "decisive_worker_log_sequence",
+        "timing_observations",
+        "semantic_result"
+      ],
+      "properties": {
+        "attempt": { "type": "string", "minLength": 1 },
+        "classification": { "type": "string", "minLength": 1 },
+        "input_key": { "type": "string", "minLength": 1 },
+        "workflow_run_id": { "type": "string", "minLength": 1 },
+        "celery_task_id": { "type": "string", "minLength": 1 },
+        "initial_delivery_tag": { "type": "string", "minLength": 1 },
+        "blocked_attribution": { "type": "object", "minProperties": 1 },
+        "immediate_pre_kill_recapture": { "type": "object", "minProperties": 1 },
+        "fault_action": { "type": "object", "minProperties": 1 },
+        "recovery_gate": { "type": "object", "minProperties": 1 },
+        "release": { "type": "object", "minProperties": 1 },
+        "final": { "type": "object", "minProperties": 1 },
+        "decisive_worker_log_sequence": { "type": "array", "minItems": 1 },
+        "timing_observations": { "type": "object", "minProperties": 1 },
+        "semantic_result": { "type": "object", "minProperties": 1 }
+      }
+    },
+    "rollback": { "type": "object", "minProperties": 1 },
+    "derived_assertions": { "type": "object", "minProperties": 1 },
+    "interpretation_limits": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 }
+    }
+  },
+  "$defs": {
+    "repoPath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9._/-]+$"
+    },
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+  }
+}

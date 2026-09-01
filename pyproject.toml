@@ -17,6 +17,7 @@ dependencies = [
   "langgraph-checkpoint-sqlite==3.1.1",
   "langgraph-prebuilt==1.1.0",
   "langgraph-sdk==0.4.2",
+  "jsonschema==4.25.1",
   "openai==2.53.0",
   "pydantic==2.13.4",
   "pydantic-core==2.46.4",
@@ -28,12 +29,18 @@ dev = [
   "pytest>=9,<10",
   "pytest-timeout>=2.4,<3",
   "ruff>=0.14,<1",
+  "types-jsonschema>=4.25,<5",
 ]
 
 [project.scripts]
 guarded-crash-bench = "guarded_loop.crash_bench:main"
+guarded-evidence = "guarded_loop.evidence_tooling:main"
 guarded-eval-trace = "guarded_loop.eval_trace:main"
+guarded-fault-replay = "guarded_loop.fault_harness:main"
 guarded-llm-run = "guarded_loop.llm_run:main"
+
+[tool.setuptools.package-data]
+guarded_loop = ["fixtures/*.json", "schemas/*.json"]
 
 [tool.setuptools.packages.find]
 include = ["guarded_loop*"]
