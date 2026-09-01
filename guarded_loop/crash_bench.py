@@ -32,6 +32,18 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 REPORT_SCHEMA_VERSION = 2
 
 
+def _configure_safe_stdio() -> None:
+    """Avoid legacy Windows code pages turning a completed run into a failure."""
+
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is not None:
+            try:
+                reconfigure(errors="backslashreplace")
+            except (OSError, ValueError):
+                pass
+
+
 @dataclass(frozen=True)
 class WorkerRun:
     returncode: int | None
@@ -265,6 +277,7 @@ def _dependency_versions() -> dict[str, str | None]:
 
 
 def main() -> int:
+    _configure_safe_stdio()
     ap = argparse.ArgumentParser()
     ap.add_argument("--runs", type=_positive_int, default=30)
     ap.add_argument("--steps", type=_positive_int, default=20)
@@ -335,9 +348,9 @@ def main() -> int:
     Path(args.out, "report.json").write_text(
         json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )
-    print(f"\n报告写入 {Path(args.out, 'report.json')}")
+    print(f"\nreport_written: {Path(args.out, 'report.json')}")
     if invalid_trials:
-        print(f"基准无效：{invalid_trials} 个 trial 未满足不变量", file=sys.stderr)
+        print(f"benchmark_invalid: {invalid_trials} trial(s) failed invariants", file=sys.stderr)
         return 1
     return 0
 

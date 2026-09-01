@@ -44,6 +44,18 @@ EVAL_MARKER = ".guarded-loop-eval-root"
 EVAL_MARKER_CONTENT = "guarded_loop.eval_trace:v1\n"
 
 
+def _configure_safe_stdio() -> None:
+    """Keep redirected Windows consoles from crashing on Chinese diagnostics."""
+
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is not None:
+            try:
+                reconfigure(errors="backslashreplace")
+            except (OSError, ValueError):
+                pass
+
+
 def case(name: str, expect: dict[str, Any]) -> Callable[[CaseFn], CaseFn]:
     def deco(fn: CaseFn) -> CaseFn:
         CASES.append({"name": name, "fn": fn, "expect": expect})
@@ -408,6 +420,7 @@ def manifest_payload() -> dict[str, Any]:
 
 
 def main() -> int:
+    _configure_safe_stdio()
     ap = argparse.ArgumentParser()
     ap.add_argument("--tmp", default="_eval")
     ap.add_argument("--manifest", default="eval_manifest.json")
@@ -417,7 +430,7 @@ def main() -> int:
     try:
         tmp = _prepare_eval_root(Path(args.tmp))
     except (OSError, ValueError) as exc:
-        print(f"[eval tmp 拒绝] {exc}", file=sys.stderr)
+        print(f"[eval_tmp_rejected] {exc}", file=sys.stderr)
         return 2
 
     case_failures = 0
@@ -439,7 +452,10 @@ def main() -> int:
     manifest_ok = True
     if args.update_manifest:
         if case_failures:
-            print("\n[manifest 未写入] 有失败 case，拒绝冻结失败实现", file=sys.stderr)
+            print(
+                "\n[manifest_update_rejected] 有失败 case，拒绝冻结失败实现",
+                file=sys.stderr,
+            )
             manifest_ok = False
         else:
             mpath.write_text(
@@ -449,7 +465,7 @@ def main() -> int:
             print(f"\nmanifest 已写入：{h[:16]}...  ({len(CASES)} cases)")
     elif not mpath.exists():
         print(
-            "\n[manifest 缺失] 不会自动创建基线；确认判据与实现后显式使用 --update-manifest",
+            "\n[manifest_missing] 不会自动创建基线；确认判据与实现后显式使用 --update-manifest",
             file=sys.stderr,
         )
         manifest_ok = False
@@ -457,12 +473,12 @@ def main() -> int:
         try:
             old = json.loads(mpath.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError) as exc:
-            print(f"\n[manifest 无效] {type(exc).__name__}: {exc}", file=sys.stderr)
+            print(f"\n[manifest_invalid] {type(exc).__name__}: {exc}", file=sys.stderr)
             manifest_ok = False
             old = None
         if old is not None and old != current_manifest:
             print(
-                f"\n[manifest 不一致] 冻结值 {old.get('sha256', '')[:16]}... "
+                f"\n[manifest_mismatch] 冻结值 {old.get('sha256', '')[:16]}... "
                 f"当前 {h[:16]}...  —— 判据被改过，确认是有意的再 --update-manifest"
             )
             manifest_ok = False

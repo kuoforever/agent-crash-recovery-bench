@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -16,6 +17,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 @pytest.mark.integration
 def test_eval_missing_manifest_fails_without_creating_baseline(tmp_path: Path) -> None:
     manifest = tmp_path / "missing-manifest.json"
+    env = {**os.environ, "PYTHONIOENCODING": "cp1252"}
     process = subprocess.run(
         [
             sys.executable,
@@ -29,10 +31,12 @@ def test_eval_missing_manifest_fails_without_creating_baseline(tmp_path: Path) -
         cwd=PROJECT_ROOT,
         capture_output=True,
         text=True,
+        encoding="cp1252",
+        env=env,
         timeout=120,
     )
     assert process.returncode == 1, process.stdout + process.stderr
-    assert "manifest 缺失" in process.stderr
+    assert "[manifest_missing]" in process.stderr
     assert not manifest.exists()
 
 
@@ -120,7 +124,10 @@ def test_worker_result_parser_ignores_non_json_diagnostics() -> None:
 
 @pytest.mark.integration
 def test_benchmark_smoke_uses_current_interpreter_and_emits_metadata(tmp_path: Path) -> None:
-    out = tmp_path / "bench"
+    # The Unicode segment proves redirected cp1252 output cannot fail after the
+    # benchmark has already written a valid report.
+    out = tmp_path / "bench-路径"
+    env = {**os.environ, "PYTHONIOENCODING": "cp1252"}
     process = subprocess.run(
         [
             sys.executable,
@@ -138,6 +145,8 @@ def test_benchmark_smoke_uses_current_interpreter_and_emits_metadata(tmp_path: P
         cwd=PROJECT_ROOT,
         capture_output=True,
         text=True,
+        encoding="cp1252",
+        env=env,
         timeout=120,
     )
     assert process.returncode == 0, process.stdout + process.stderr

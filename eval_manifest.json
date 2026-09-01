@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
-  "sha256": "8bfab4971eb9ec62a5fd93e2ffe6291d6aadc39ec44345b45ae47a9054cd74c7",
+  "sha256": "2f51fbfe366e8f9bbecd359af57b012d359a3e7befdea592c25069c77550b5ef",
   "criteria_sha256": "b03c3bf5b656bfc6befb0ccf093fdae098e141b5577a05264f209e9393b17fef",
-  "implementation_sha256": "88cdd244539a6b0d822c346fbbdf106b80a88f153fecc3ba12156854eeb8b1e0",
+  "implementation_sha256": "cdff0568f70f592e66794b84a8ff5a9d0c1dea36941b7965e97de3fd4d9d7d87",
   "protected_files": [
     "guarded_loop/tools.py",
     "guarded_loop/graph.py",

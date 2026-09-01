@@ -87,7 +87,7 @@ trial、实现 hash 与受控临时目录；Dify sink 增加请求/并发上限�
 gate；同时补齐 22 个 pytest、strict mypy/Ruff、`uv.lock`、hash requirements export 与分层 CI。
 
 验证结果：`ruff check` 通过；strict mypy 对 8 个 source file 为 0 issue；pytest 为 22/22；
-deterministic eval 为 15/15，manifest `8bfab4971eb9ec62...`；Python 3.11 isolated smoke 为
+deterministic eval 为 15/15，manifest `2f51fbfe366e8f9b...`；Python 3.11 isolated smoke 为
 15 passed / 7 deselected；hash requirements 的 `pip --dry-run --require-hashes` 通过。最终 30 x 20
 crash benchmark 的 90 个 trial 全部有效：async checkpoint-only 为 29/30 runs、130 duplicates；sync
 为 20/30、20 duplicates；ledger 为 0 duplicate，20 次 `UNCERTAIN_HALT` / 10 次正常。该次 async

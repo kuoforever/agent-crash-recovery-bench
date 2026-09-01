@@ -155,7 +155,9 @@ def main() -> int:
     (run_dir / "trace.json").write_text(
         json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8"
     )
-    print(json.dumps(out, ensure_ascii=False, indent=2))
+    # Console output may be redirected through a legacy Windows code page. Keep the
+    # persisted trace human-readable while making stdout ASCII-safe and machine-readable.
+    print(json.dumps(out, ensure_ascii=True, indent=2))
     return 0
 
 
