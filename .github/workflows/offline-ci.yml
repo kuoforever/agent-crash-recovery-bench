@@ -1,0 +1,69 @@
+name: Offline CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: offline-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    name: Smoke / Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Install uv and Python
+        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7
+        with:
+          version: "0.12.5"
+          enable-cache: true
+          python-version: ${{ matrix.python-version }}
+      - name: Sync locked development environment
+        run: uv sync --locked --group dev
+      - name: Check formatting and lint
+        run: |
+          uv run ruff format --check guarded_loop tests
+          uv run ruff check guarded_loop tests
+      - name: Type-check contract and harness code
+        run: uv run mypy guarded_loop
+      - name: Run deterministic smoke tests
+        run: uv run pytest -m "not integration" -q
+
+  windows-full:
+    name: Windows full offline gate
+    needs: smoke
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Install uv and Python
+        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7
+        with:
+          version: "0.12.5"
+          enable-cache: true
+          python-version: "3.13"
+      - name: Sync locked development environment
+        run: uv sync --locked --group dev
+      - name: Run all offline tests
+        run: uv run pytest -q
+      - name: Verify frozen deterministic evaluation
+        run: uv run python -m guarded_loop.eval_trace --tmp _ci_eval
+      - name: Run authoritative crash benchmark invariants
+        run: >-
+          uv run python -m guarded_loop.crash_bench
+          --runs 30 --steps 20 --worker-timeout 60 --out _ci_bench

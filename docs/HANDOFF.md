@@ -10,8 +10,9 @@ attribution、默认 early-ACK worker 崩溃、experiment-only late-ACK whole-wo
 prefork feasibility + no-fault normal control。结论见根目录 `README.md`，设计理由见
 `docs/DESIGN.md`，原始数据在 `evidence/`。
 
-一句话版本：LangGraph 的检查点给的是"能接着走"不是"不会重复做"；崩溃注入 30 次 × 20 步，
-纯检查点默认配置下重复副作用 128 条、最强持久化 `sync` 下 20 条、叠加自建两段式意图账本后 0 条。
+一句话版本：LangGraph 的检查点给的是"能接着走"不是"不会重复做"；归档的崩溃注入 30 次 × 20 步中，
+纯检查点默认配置记录 128 条重复副作用、最强持久化 `sync` 下 20 条、叠加自建两段式意图账本后 0 条。
+其中 async 的具体重复条数受 checkpoint 调度时序影响，128 是该归档样本，不是跨运行不变量。
 
 Dify 一句话版本：debugger 不重试时 HTTP 500 被当作普通输出，配置 3 次重试会把已落盘副作用
 做 4 次；Published workflow 的 `blocking` 在 API 进程内执行，`streaming` 才进入 Celery。有效
@@ -34,17 +35,17 @@ prefork normal control 另存两次稳定 parent/child 拓扑、blocked exact ta
 ## 环境与复现
 
 ```bash
-python -m venv .venv
-.venv/Scripts/pip install -r requirements-lock.txt
-
-python -m guarded_loop.crash_bench --runs 30 --steps 20 --out _bench
-python -m guarded_loop.eval_trace
-python -m guarded_loop.llm_run          # 需要 OPENAI_API_KEY
+uv sync --locked --group dev
+uv run python -m guarded_loop.crash_bench --runs 30 --steps 20 --out _bench
+uv run python -m guarded_loop.eval_trace
+uv run python -m guarded_loop.llm_run          # 需要 OPENAI_API_KEY
 ```
 
-前两条不需要网络也不需要 API key，可离线重跑。第三条会真的调 `gpt-4o-mini`。
+环境同步完成后，crash benchmark 与 eval 不需要网络或 API key；`llm_run` 会真的调 `gpt-4o-mini`。
+没有 `uv` 时可用 `pip install --require-hashes -r requirements-lock.txt` 安装运行依赖。
 
-开发时用的是 Python 3.13.7 / Windows。版本锁在 `requirements-lock.txt`。
+开发时用的是 Python 3.13.7 / Windows。`uv.lock` 冻结完整跨平台解析，`requirements-lock.txt` 与
+`requirements-dev-lock.txt` 是带 artifact hash 的 runtime / dev export。
 
 一次 host terminal observation 在 post-rollback capture 结束（`2026-08-30T04:33:39.867034Z`）之后、
 脱敏 raw 快照记录（`2026-08-30T04:38:38.0855202Z`）之前看到 Dify 两个 WSL 发行版与 sink
@@ -65,10 +66,10 @@ artifact 自身仍只有 worker rollback 证据，不能被新切片反向升级
 worker.py        一次运行 = 一个子进程（崩溃注入靠杀进程，不靠抛异常）
   └─ graph.py    LangGraph StateGraph：plan → gate → act → route
        └─ tools.py   固定注册表 + pydantic 双向校验 + 意图账本（不 import 任何 langgraph 符号）
-crash_bench.py   三组对照的崩溃注入基准
-eval_trace.py    10 个确定性 case + SHA-256 manifest
-llm_run.py       真实模型链路
-dify_sink.py     Dify 对照用 HTTP sink：fsync、可控状态码、可阻塞崩溃窗口
+crash_bench.py   三组对照的崩溃注入基准 + timeout / trial invariant / 环境元数据
+eval_trace.py    15 个确定性 case + 判据/实现 SHA-256 manifest
+llm_run.py       真实模型链路 + 默认拒绝的统一审批边界
+dify_sink.py     Dify HTTP sink：fsync、atomic marker、请求/并发上限、非 loopback unsafe gate
 dify/            三个可导入的 Dify DSL
 evidence/dify-published-crash-*.json   Published API executor / worker-crash 证据
 evidence/dify-published-late-ack-*.json   Published API late-ACK redelivery / duplicate 证据
@@ -78,7 +79,24 @@ evidence/dify-prefork-control-*.json   Published API prefork feasibility / no-fa
 `tools.py` 不依赖 LangGraph 是有意的——只有契约层能独立存在，
 "哪些保证是框架给的、哪些是自己给的"才问得出来。改代码时请保持这条边界。
 
-## 唯一下一动作
+## 已完成的维护 detour（2026-09-01）
+
+**状态：离线维护已闭合；没有执行任何 Dify live fault。** 本切片修复了审批、三态账本、canonical
+幂等参数、图层未知工具和真实模型外循环的 fail-closed 语义；benchmark/eval 增加 timeout、invalid
+trial、实现 hash 与受控临时目录；Dify sink 增加请求/并发上限、atomic marker 和非 loopback unsafe
+gate；同时补齐 22 个 pytest、strict mypy/Ruff、`uv.lock`、hash requirements export 与分层 CI。
+
+验证结果：`ruff check` 通过；strict mypy 对 8 个 source file 为 0 issue；pytest 为 22/22；
+deterministic eval 为 15/15，manifest `2f51fbfe366e8f9b...`；Python 3.11 isolated smoke 为
+15 passed / 7 deselected；hash requirements 的 `pip --dry-run --require-hashes` 通过。最终 30 x 20
+crash benchmark 的 90 个 trial 全部有效：async checkpoint-only 为 29/30 runs、130 duplicates；sync
+为 20/30、20 duplicates；ledger 为 0 duplicate，20 次 `UNCERTAIN_HALT` / 10 次正常。该次 async
+130 与归档样本 128 的差异再次说明具体条数 timing-sensitive；没有替换 `evidence/` 中的原始归档。
+
+维护完成后仍从下一节逐字恢复，不新增其他下一动作。`DifyBench-Isolated-20260828` 未被启动、恢复、
+kill 或改写。
+
+## 精确故障实验恢复点（detour 完成后的唯一下一动作）
 
 只在 `DifyBench-Isolated-20260828` 中另开一个 **exact prefork child-loss fault** 切片。重启后先重新验证
 bridge / Redis PONG / API health / worker ready，再以新 key 重建并归档与本次相同的 exact-task late ACK、
@@ -126,5 +144,5 @@ Celery worker；Celery task 若在执行前 early ACK，worker 崩溃后 Redis v
   Human Input、本地 debugger 草稿和单 worker Published API `blocking` / `streaming`、early ACK、一次
   experiment-only late ACK whole-container 对照与一次 prefork 无故障 control；pool-child-only reject 隔离、
   连续 timeout latency、集群、定时任务、生产流量与 Coze 等其他平台仍是空白。
-- 本仓库的数字（30×20、128/20/0、10 个 case）与 Guarded Desktop Agent 的数字
+- 本仓库的归档数字（30×20、async 样本 128 / sync 20 / ledger 0、15 个 case）与 Guarded Desktop Agent 的数字
   （30×100、1420 项测试、13 个 case）是两套独立实验，不要混用。

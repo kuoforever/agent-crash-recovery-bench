@@ -1,10 +1,18 @@
 .venv/
 __pycache__/
 *.pyc
+*.egg-info/
+build/
+dist/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
 
 # 运行产物：三条命令可原地重跑生成。
 # 需要长期留存的结果已复制进 evidence/。
 _bench/
+_ci_bench/
+_ci_eval/
 _eval/
 _llm/
 _smoke/

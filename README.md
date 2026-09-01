@@ -27,13 +27,19 @@
 ## 跑什么
 
 ```bash
-python -m venv .venv && .venv/Scripts/pip install -r requirements-lock.txt
-python -m guarded_loop.crash_bench --runs 30 --steps 20 --out _bench   # 崩溃注入基准
-python -m guarded_loop.eval_trace                                       # 10 个确定性 case
-python -m guarded_loop.llm_run                                          # 真实模型链路（需 OPENAI_API_KEY）
+uv sync --locked --group dev
+uv run python -m guarded_loop.crash_bench --runs 30 --steps 20 --out _bench
+uv run python -m guarded_loop.eval_trace                                # 15 个确定性 case
+uv run python -m guarded_loop.llm_run                                   # 真实模型链路（需 OPENAI_API_KEY）
 ```
 
-前两条不需要网络，也不需要 API key。
+环境同步完成后，crash benchmark 与 eval 不需要网络或 API key。
+没有 `uv` 时可用 `pip install --require-hashes -r requirements-lock.txt` 安装运行依赖；
+`uv.lock` 与两个 requirements export 都冻结了完整依赖和 artifact hash。
+
+PR 的 offline CI 先在 Linux / Python 3.11-3.13 跑格式、lint、strict mypy 与无子进程 smoke，
+再在 Windows / Python 3.13 跑全部 pytest、冻结 eval 和 30×20 crash benchmark。网络模型和 Dify
+故障实验不属于这个自动门禁。
 
 ## 结论一：LangGraph 的检查点给的是"能接着走"，不是"不会重复做"
 
@@ -42,14 +48,15 @@ python -m guarded_loop.llm_run                                          # 真实
 
 | 对照组 | 有重复副作用的运行 | 重复副作用条数 | 停止码 |
 |---|---|---|---|
-| 纯检查点 · `durability="async"`（默认） | 29 / 30 | **128** | 全部静默跑完 |
+| 纯检查点 · `durability="async"`（默认，归档样本） | 29 / 30 | **128** | 全部静默跑完 |
 | 纯检查点 · `durability="sync"`（最强持久化） | 20 / 30 | **20** | 全部静默跑完 |
 | 检查点 + 自建意图账本 | **0 / 30** | **0** | 20 次 `UNCERTAIN_HALT` / 10 次正常 |
 
 数字能逐条对上账，这点比数字本身重要：
 
 - `sync` 下每次崩溃只重放**正在执行的那个节点**，所以恰好 1 条重复 × 20 次运行；
-  `async` 下已完成但未落盘的 superstep 也会一起丢，所以重复条数涨到 128。
+  `async` 下已完成但未落盘的 superstep 也会一起丢。表中的 128 是归档样本值，具体条数受异步
+  checkpoint 调度时序影响，不是跨运行不变量；稳定结论是它会重放尚未持久化的已完成 superstep。
 - 20 次 = 副作用已经落地的两个注入相位（`post_apply` + `post_commit`）各 10 次。
   `pre_apply` 那 10 次崩在副作用发生之前，重放一次反而是对的，所以不计重复。
 
@@ -76,19 +83,21 @@ python -m guarded_loop.llm_run                                          # 真实
 
 ## 结论四：判据用 trace，不用自然语言
 
-10 个确定性 case，判的是**调用序列 + 停止码 + 副作用条数**，不判模型说了什么。
-期望值用 SHA-256 冻进 `eval_manifest.json`（当前 `fa9c9eed8e15387b...`），
-改实现时如果顺手把不过的用例调松，manifest 对不上会直接报出来。当前 10/10 通过。
+15 个确定性 case，判的是**调用序列 + 停止码 + 副作用条数**，不判模型说了什么。
+判据与受保护实现一起用 SHA-256 冻进 `eval_manifest.json`；缺失 manifest 不会自动建基线，
+改判据或实现后必须显式复核并运行 `--update-manifest`。当前 15/15 通过。
 
-覆盖：注册表外的工具名被拒 / 参数不合契约不进执行层 / 超长文本被挡 / 重放不产生第二次副作用 /
-留下未完成意图判不确定 / 正常回路副作用条数正确 / 高风险动作挂起且未落副作用 /
-审批被拒不执行 / 审批通过恰好执行一次 / 不确定停机后不推进游标。
+覆盖：注册表外工具在契约层和图层都 fail closed / 参数与额外字段不合契约不进执行层 /
+确定无副作用失败清除 pending / 副作用后无有效回执判 `uncertain` 且不重放 / 正常回路与重放 /
+高风险动作挂起 / 严格布尔审批（字符串 `"false"` 不算批准）/ 不确定停机后不推进游标。
 
 ## 真实模型链路
 
 `ChatOpenAI(gpt-4o-mini) + bind_tools`，固定注册表原样暴露给模型，
 但**执行不交给 LangChain 的 ToolNode**——模型给的参数一样要逐字段过 pydantic schema 才准进执行层。
 实跑序列：`read_status(t0)` → `write_note(t0, "hello")` → 收尾，两次调用都 `ok`。
+模型若请求 `needs_approval` 工具，默认拒绝并停止；只有命令行显式传入
+`--approve-tool submit_form` 才会允许该次运行执行它。
 
 崩溃基准刻意不接模型：恢复语义要单独量，模型的随机性混进去就成噪声了。
 
