@@ -1,9 +1,21 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "generated_at_utc": "2026-09-01T03:16:07.5502676+00:00",
   "evidence_kind": "sha256_source_artifact_manifest",
   "scope": "Exact prefork child-loss fault, invalid no-kill controls, final recovery state, and full rollback in DifyBench-Isolated-20260828",
   "artifact_count": 34,
+  "availability_policy": {
+    "tracked_paths": [
+      "guarded_loop/dify_sink.py"
+    ],
+    "local_only_prefixes": [
+      "_dify_bench/"
+    ]
+  },
+  "availability_counts": {
+    "tracked": 1,
+    "local_only": 33
+  },
   "credential_handling": "The manifest contains only repository-relative paths, SHA-256 digests, and byte counts. Published App tokens, Authorization headers, passwords, cookies, full service environments, bootstrap credentials, and raw SSE bodies are excluded from tracked evidence.",
   "availability_boundary": "Only guarded_loop/dify_sink.py is tracked. The other 33 source artifacts are intentionally gitignored and retained on the experiment host, so a public clone can inspect this manifest and the sanitized evidence but cannot independently rehash or reproduce those local artifacts.",
   "artifacts": [

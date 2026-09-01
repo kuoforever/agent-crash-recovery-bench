@@ -81,6 +81,9 @@ crash_bench.py   三组对照的崩溃注入基准 + timeout / trial invariant /
 eval_trace.py    15 个确定性 case + 判据/实现 SHA-256 manifest
 llm_run.py       真实模型链路 + 默认拒绝的统一审批边界
 dify_sink.py     Dify HTTP sink：fsync、atomic marker、请求/并发上限、非 loopback unsafe gate
+fault_harness.py 通用 fail-closed child-loss state machine；仓库只带 offline replay adapter
+evidence_tooling.py  JSON sanitizer + schema/linkage/artifact verifier
+guarded_loop/schemas/  child-loss report/raw/manifest 的 tracked Draft 2020-12 schema
 dify/            三个可导入的 Dify DSL
 evidence/dify-published-crash-*.json   Published API executor / worker-crash 证据
 evidence/dify-published-late-ack-*.json   Published API late-ACK redelivery / duplicate 证据
@@ -142,12 +145,53 @@ checkpoint-only 为 27/30 runs、102 duplicates（timing-sensitive，不替换�
 全部 JSON parse，classification 与两层 hash linkage 一致；本机 34/34 source path/hash/size 匹配，常见
 secret pattern 0 命中，且 tracked=1 / local-only=33 的 portability boundary 已显式验证。
 
+## 已完成的离线 evidence tooling tranche（2026-09-01）
+
+**状态：纯离线工程化已闭合；没有启动 Dify 或重跑 fault。** `fault_harness.py` 把 preflight →
+attempt 1 → fault 前立即重采 → exact child-only receipt → replacement/same-delivery redelivery → attempt 2
+→ release → final 提炼为可注入 adapter 的 fail-closed state machine，并在每个动作前先 atomic archive。
+仓库唯一 adapter 是 fixture `offline_replay`；不包含 Dify/WSL/Docker/kill 实现、固定 PID、token 或本机
+绝对路径。pre-fault tuple 改变、初始/恢复 delivery 状态不精确、receipt 不完整都会停止或保持 unresolved。
+fault 结果使用 `not_applied / applied / unknown`，adapter 异常不得写成未注入；release request/receipt 必须
+绑定并回显 `run_id / task_id / delivery_tag`。invalid blocked/pre-fault gate 不自动 cleanup，而是
+`cleanup_authority_unknown`。当前 replay 只有 capture budget，没有可信 visibility deadline；对应分类是
+`redelivery_not_observed_within_capture_budget`，不能扩写成 `visibility_due + 120s` 观察。
+
+capture-budget cleanup 还必须由 latest observation 重新证明 exact active/unacknowledged task、same delivery、
+broker `0/1/1`、仅 attempt 1、replacement child 与 release absent。task/broker 已清空、identity/count 改变、
+出现 attempt 2 或意外 release 时均不发送 release，只报 `cleanup_authority_unknown`。
+
+`evidence_tooling.py` 加入 duplicate-key rejecting JSON loader、recursive sanitizer、Draft 2020-12 schema
+validation、repo-root/path-traversal containment，以及 report → raw / report+raw → manifest SHA-256、
+classification、count、availability policy、artifact bytes/hash 的统一 verifier。manifest 升到 v2，用
+`tracked_paths` 与 `local_only_prefixes` 明示 1/33 边界。实验宿主本轮是 34/34 `verified`；只复制 Git
+内容的 public-clone fixture 是 `partial / complete_source_verification=false`、1 `verified`、33
+`unavailable`、0 failed。默认 CLI 对 `partial` 返回 3；`--allow-unavailable` 只允许自动化接受已声明
+限制，不改变 JSON 状态。漏掉 tracked sink 会 `failed`，不会冒充 `unavailable`。
+敏感 key（含 exact `secret` / `credential` / session token）的数字/布尔等非 null 值同样脱敏并由 audit
+报警；audit 只认可整个值恰为 `[REDACTED]`，夹带 marker 不能跳过字符串扫描。嵌入
+`--output=C:\...` / `path:/home/...` 的绝对路径也会命中。重叠 `local_only_prefixes` 会让 policy 与逐
+artifact 状态一起 `failed`。
+
+sanitizer 首次核验发现 child-loss raw 仍有 4 个 compose 绝对路径，已用带角色的 redaction label 替换；
+manifest/raw/report linkage 按依赖顺序更新。当前 report/raw/manifest SHA-256 分别为 `4561de93…`、
+`5f03951e…`、`8fa17000…`。sanitizer 是 pattern-based 防线，发布前人工 secret review 仍是必要限制。
+
+本 tranche 当前离线验证：Ruff format/check 通过；strict mypy 对 10 个 source file 为 0 issue；pytest
+47/47，其中新增 25 个 fixture/negative test 覆盖 no-fault gate、fault unknown、release binding、explicit
+redelivery、stale/cleared cleanup authority、public-clone unavailable、tracked missing、tampered linkage、
+schema field、path traversal、duplicate key、marker smuggling、secret/path redaction 与受控输出。CI smoke
+三个 Python 版本新增 offline replay 和 public-clone `expect-unavailable=33`
+门禁；Windows full gate 继续跑全部 pytest、冻结 eval 与 30 × 20 benchmark。本地最终 authoritative
+benchmark 的 90 个 trial 全部有效、0 invalid：async checkpoint-only 为 29/30 runs、132 duplicates；
+sync checkpoint-only 为 20/30 runs、20 duplicates；ledger 为 0 duplicate、20 次 `UNCERTAIN_HALT` / 10
+次正常。具体 duplicate 数仍是 timing-sensitive，本轮不替换既有归档样本。
+
 ## 唯一下一动作
 
-在**独立 engineering tranche / PR** 中发布不含凭据的通用 orchestration harness、tracked evidence 的
-JSON Schema / sanitizer，以及能校验 tracked raw/report linkage、并把 gitignored source 明确判成
-`unavailable` 而不是假装通过的 manifest verifier。该 tranche 只做离线工程化和 fixture 测试，不启动
-Dify、不重跑 fault、不复用任何历史 PID；更大的 live fault 或幂等性 mitigation 必须重新取得显式 scope。
+当前没有已授权的后续实施项。合并并清理本独立 tranche 后停止，等待用户显式选择新的 fault class、
+idempotency mitigation 或其他工程 scope；在获得新 scope 前不得启动 Dify、重跑 fault、复用历史 PID，
+也不得把 public-clone 的 33 个 `unavailable` 原件表述成已验证。
 
 ### 判断标准
 

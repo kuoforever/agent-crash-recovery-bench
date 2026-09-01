@@ -23,6 +23,7 @@
 | `docs/DIFY-STATUS.md` | Dify 1.16.1 对照实验、复现环境与运行状态 |
 | `dify/` | 三个可导入的 Dify DSL：不重试、重试 3 次、人工审批 |
 | `evidence/` | 原始数据：崩溃注入报告、真实模型 trace，以及 Dify debugger / Published API early-ACK、late-ACK、prefork normal-control 与 exact child-loss 摘要、脱敏快照和 SHA-256 manifest |
+| `guarded_loop/schemas/` | child-loss report / raw / manifest 的 tracked Draft 2020-12 JSON Schema |
 
 ## 跑什么
 
@@ -31,15 +32,18 @@ uv sync --locked --group dev
 uv run python -m guarded_loop.crash_bench --runs 30 --steps 20 --out _bench
 uv run python -m guarded_loop.eval_trace                                # 15 个确定性 case
 uv run python -m guarded_loop.llm_run                                   # 真实模型链路（需 OPENAI_API_KEY）
+uv run guarded-fault-replay --scenario guarded_loop/fixtures/recovered.json --out _harness
+uv run guarded-evidence verify --root . --report evidence/dify-prefork-child-loss-report.json --allow-unavailable
 ```
 
 环境同步完成后，crash benchmark 与 eval 不需要网络或 API key。
 没有 `uv` 时可用 `pip install --require-hashes -r requirements-lock.txt` 安装运行依赖；
 `uv.lock` 与两个 requirements export 都冻结了完整依赖和 artifact hash。
 
-PR 的 offline CI 先在 Linux / Python 3.11-3.13 跑格式、lint、strict mypy 与无子进程 smoke，
-再在 Windows / Python 3.13 跑全部 pytest、冻结 eval 和 30×20 crash benchmark。网络模型和 Dify
-故障实验不属于这个自动门禁。
+PR 的 offline CI 先在 Linux / Python 3.11-3.13 跑格式、lint、strict mypy、无子进程 smoke、
+sanitized orchestration replay，以及 public-clone `partial / unavailable=33` evidence gate；再在
+Windows / Python 3.13 跑全部 pytest、冻结 eval 和 30×20 crash benchmark。网络模型和 Dify 故障实验
+不属于这个自动门禁。
 
 ## 结论一：LangGraph 的检查点给的是"能接着走"，不是"不会重复做"
 
@@ -257,6 +261,36 @@ Redis queue/unacked/index 为 0；实验 client 与 sink 已移除，隔离 WSL 
 [POST 重试风险](https://docs.dify.ai/en/cli/integrate-agents/error-handling-and-retries-for-agents)、
 [Celery task ACK 配置](https://docs.celeryq.dev/en/stable/userguide/configuration.html#task-acks-late) 与
 [Redis visibility timeout](https://docs.celeryq.dev/en/stable/getting-started/backends-and-brokers/redis.html#visibility-timeout)。
+
+## 证据发布工具：`partial` 不能伪装成 `verified`
+
+`guarded_loop/fault_harness.py` 把 exact child-loss 的归因顺序提炼成通用 fail-closed state machine：
+preflight、attempt 1、fault 前立即重采、fault receipt、replacement/redelivery、attempt 2、release、终态。
+每个 observation 都先原子落盘再允许下一动作；task、delivery、parent、executor 或唯一 child tuple 任一
+变化都会在 fault 前停止。仓库只提供 `offline_replay` adapter；没有 Dify/WSL/Docker 命令、真实 kill
+adapter、固定 PID、token 或本机绝对路径，不能把 replay 说成又做了一次 live fault。
+fault action 用 `not_applied / applied / unknown` 三态记录，adapter 抛异常必须是 `unknown`。release request
+必须绑定本次 `run_id + task_id + delivery_tag`，receipt 要逐字段回显；invalid identity gate 不自动 cleanup，
+而是 `cleanup_authority_unknown`。recovery 只按 fixture capture 次数有界，所以未见重投的名称明确为
+`redelivery_not_observed_within_capture_budget`，不冒充 `visibility_due + 120s` 的时间结论。
+
+capture budget 耗尽后的 cleanup 也必须由最新 observation 重新证明 exact active/unacknowledged task、
+same delivery、broker `0/1/1`、只有 attempt 1、replacement child 与 release absent。task/broker 已清空、
+身份或计数变化、已有 attempt 2、或 release 意外出现时都不动作，只报 `cleanup_authority_unknown`。
+
+`guarded-evidence` 做三件彼此分开的事：
+
+- tracked JSON Schema 检查 report / raw / manifest 的关键字段和类型；duplicate JSON key、非 canonical
+  repository path 与 path traversal 都 fail closed。
+- sanitizer 对敏感 key（包括 exact `secret` / `credential` / session token）的任何非 null 类型都脱敏，
+  audit 只把 exact `[REDACTED]` 当作该字段的安全值，不能靠在真实值后拼 marker 绕过；它还递归处理
+  Bearer/JWT/API-key 形态、URL credential assignment 与独立或嵌入参数中的本机绝对路径；
+  禁止原地覆盖，输出用 atomic replace。它是 pattern-based 防线，不能替代发布前人工 secret review。
+- verifier 重算 report → raw、report/raw → manifest 的 SHA-256，核对 classification、artifact count、
+  availability policy、每个可用 artifact 的 hash/bytes。manifest v2 明示 `tracked=1 / local_only=33`：
+  public clone 的 33 项必须输出 `unavailable`，bundle 状态是 `partial`，默认退出码为 3；只有调用方显式
+  `--allow-unavailable` 才能让 CI 接受这个已声明的边界，JSON 状态仍不会变成 `verified`。若 tracked
+  source 缺失、schema/linkage/hash 不一致、路径不安全或 local-only prefix 重叠，状态一律为 `failed`。
 
 ## 边界（面试时必须一起说）
 

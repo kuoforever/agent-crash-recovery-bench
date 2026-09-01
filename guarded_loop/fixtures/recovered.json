@@ -1,0 +1,187 @@
+{
+  "schema_version": 1,
+  "mode": "offline_replay",
+  "spec": {
+    "run_id": "run-fixture-001",
+    "task_id": "task-fixture-001",
+    "recovery_observation_limit": 2,
+    "final_observation_limit": 2,
+    "successful_final_status": "succeeded"
+  },
+  "captures": [
+    {
+      "captured_at_utc": "2026-09-01T00:00:00+00:00",
+      "executor": {
+        "executor_id": "executor-fixture",
+        "start_marker": "executor-start-fixture",
+        "restart_count": 0
+      },
+      "parent": {
+        "pid": 100,
+        "start_marker": "parent-start-fixture"
+      },
+      "children": [
+        {
+          "pid": 200,
+          "start_marker": "child-start-fixture"
+        }
+      ],
+      "task": null,
+      "broker": {
+        "queue_depth": 0,
+        "unacked_count": 0,
+        "unacked_index_count": 0,
+        "task_id": null,
+        "delivery_tag": null,
+        "redelivered": null
+      },
+      "effect_attempts": [],
+      "release_present": false,
+      "final_status": null
+    },
+    {
+      "captured_at_utc": "2026-09-01T00:00:01+00:00",
+      "executor": {
+        "executor_id": "executor-fixture",
+        "start_marker": "executor-start-fixture",
+        "restart_count": 0
+      },
+      "parent": {
+        "pid": 100,
+        "start_marker": "parent-start-fixture"
+      },
+      "children": [
+        {
+          "pid": 200,
+          "start_marker": "child-start-fixture"
+        }
+      ],
+      "task": {
+        "run_id": "run-fixture-001",
+        "task_id": "task-fixture-001",
+        "delivery_tag": "delivery-fixture-001",
+        "worker_pid": 200,
+        "active": true,
+        "acknowledged": false,
+        "redelivered": false
+      },
+      "broker": {
+        "queue_depth": 0,
+        "unacked_count": 1,
+        "unacked_index_count": 1,
+        "task_id": "task-fixture-001",
+        "delivery_tag": "delivery-fixture-001",
+        "redelivered": null
+      },
+      "effect_attempts": [1],
+      "release_present": false,
+      "final_status": null
+    },
+    {
+      "captured_at_utc": "2026-09-01T00:00:02+00:00",
+      "executor": {
+        "executor_id": "executor-fixture",
+        "start_marker": "executor-start-fixture",
+        "restart_count": 0
+      },
+      "parent": {
+        "pid": 100,
+        "start_marker": "parent-start-fixture"
+      },
+      "children": [
+        {
+          "pid": 200,
+          "start_marker": "child-start-fixture"
+        }
+      ],
+      "task": {
+        "run_id": "run-fixture-001",
+        "task_id": "task-fixture-001",
+        "delivery_tag": "delivery-fixture-001",
+        "worker_pid": 200,
+        "active": true,
+        "acknowledged": false,
+        "redelivered": false
+      },
+      "broker": {
+        "queue_depth": 0,
+        "unacked_count": 1,
+        "unacked_index_count": 1,
+        "task_id": "task-fixture-001",
+        "delivery_tag": "delivery-fixture-001",
+        "redelivered": null
+      },
+      "effect_attempts": [1],
+      "release_present": false,
+      "final_status": null
+    },
+    {
+      "captured_at_utc": "2026-09-01T00:00:03+00:00",
+      "executor": {
+        "executor_id": "executor-fixture",
+        "start_marker": "executor-start-fixture",
+        "restart_count": 0
+      },
+      "parent": {
+        "pid": 100,
+        "start_marker": "parent-start-fixture"
+      },
+      "children": [
+        {
+          "pid": 201,
+          "start_marker": "replacement-start-fixture"
+        }
+      ],
+      "task": {
+        "run_id": "run-fixture-001",
+        "task_id": "task-fixture-001",
+        "delivery_tag": "delivery-fixture-001",
+        "worker_pid": 201,
+        "active": true,
+        "acknowledged": false,
+        "redelivered": true
+      },
+      "broker": {
+        "queue_depth": 0,
+        "unacked_count": 1,
+        "unacked_index_count": 1,
+        "task_id": "task-fixture-001",
+        "delivery_tag": "delivery-fixture-001",
+        "redelivered": true
+      },
+      "effect_attempts": [1, 2],
+      "release_present": false,
+      "final_status": null
+    },
+    {
+      "captured_at_utc": "2026-09-01T00:00:04+00:00",
+      "executor": {
+        "executor_id": "executor-fixture",
+        "start_marker": "executor-start-fixture",
+        "restart_count": 0
+      },
+      "parent": {
+        "pid": 100,
+        "start_marker": "parent-start-fixture"
+      },
+      "children": [
+        {
+          "pid": 201,
+          "start_marker": "replacement-start-fixture"
+        }
+      ],
+      "task": null,
+      "broker": {
+        "queue_depth": 0,
+        "unacked_count": 0,
+        "unacked_index_count": 0,
+        "task_id": null,
+        "delivery_tag": null,
+        "redelivered": null
+      },
+      "effect_attempts": [1, 2],
+      "release_present": true,
+      "final_status": "succeeded"
+    }
+  ]
+}

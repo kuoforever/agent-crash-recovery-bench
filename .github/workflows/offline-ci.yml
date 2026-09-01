@@ -42,6 +42,18 @@ jobs:
         run: uv run mypy guarded_loop
       - name: Run deterministic smoke tests
         run: uv run pytest -m "not integration" -q
+      - name: Replay sanitized orchestration fixture
+        run: >-
+          uv run guarded-fault-replay
+          --scenario guarded_loop/fixtures/recovered.json
+          --out _ci_harness
+      - name: Verify public-clone evidence boundary
+        run: >-
+          uv run guarded-evidence verify
+          --root .
+          --report evidence/dify-prefork-child-loss-report.json
+          --allow-unavailable
+          --expect-unavailable 33
 
   windows-full:
     name: Windows full offline gate

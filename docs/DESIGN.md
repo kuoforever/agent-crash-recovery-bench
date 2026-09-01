@@ -84,6 +84,40 @@ def maybe_crash(phase, step):
 是改实现时顺手把不过的用例调松了——manifest 对不上会直接报出来；manifest 缺失也不会自动创建，
 改判据或实现必须先复核，再显式 `--update-manifest`。
 
+## 故障编排与公开证据为什么分层
+
+真实 fault 的危险动作不应和证据格式耦在一支脚本里。`fault_harness.py` 因此只保留可注入 adapter 的
+state machine 与 atomic transcript：observation 先归档，gate 再判定，最后才可能调用 fault/release。
+checked-in adapter 只能 replay fixture，不知道 Dify、容器、host namespace 或系统 kill 命令。未来若有
+新的 live scope，平台 adapter 也必须在仓库外显式提供有界 capture/fault/release；state machine 本身
+不会从历史 transcript 猜 PID，也不会把不完整 receipt 当成成功。
+
+fault outcome 与工具三态一样不能压成 bool：adapter 返回 exact receipt 才是 `applied`，明确未执行才是
+`not_applied`，异常或 identity 不一致必须是 `unknown`。release 也携带 `run_id / task_id / delivery_tag`
+binding 并核对 receipt；invalid blocked/pre-fault identity gate 不做“善意 cleanup”，因为那可能释放另一条
+任务，只能报 `cleanup_authority_unknown`。当前 generic replay 的边界是 capture count，不含可信 wall clock
+或 `visibility_due`，所以 exhaustion 只叫 `redelivery_not_observed_within_capture_budget`。
+
+即使 capture budget 已耗尽，cleanup 也不会依赖旧的 blocked delivery。latest observation 必须重新证明
+exact active/unacknowledged task、same delivery、broker `0/1/1`、仅 attempt 1、replacement child 与 release
+absent；task/broker 已清空、identity/count 改变、出现 attempt 2 或意外 release 时均 fail closed 为
+`cleanup_authority_unknown`，且不发送 release。
+
+证据层再拆成三个独立判据：JSON Schema 判结构，sanitizer 判公开内容，verifier 判跨文件 linkage 与
+artifact availability。它们不能互相替代：manifest 中有 hash 不代表本机原件存在；schema valid 不代表
+内容没有 secret；sanitized transcription 也不证明未跟踪原件的 hash。verifier 因而有三种 bundle 状态：
+
+| 状态 | 含义 |
+|---|---|
+| `verified` | schema/linkage 均通过，所有 declared source 在本次 root 中可读且 hash/bytes 匹配 |
+| `partial` | schema/linkage 通过，但明确声明为 `local_only` 的 source 不在 clone；逐项记 `unavailable` |
+| `failed` | tracked source 缺失、hash/linkage/schema/count/policy/path 任一失败 |
+
+`--allow-unavailable` 只改变 CLI 是否接受已声明的 `partial` 作为自动化边界，不改变 JSON 状态，也不把
+33 个本机原件升级成已验证。sanitizer 是规则驱动的第二道防线，不是任意 secret 的形式化证明。
+敏感 exact key 的非 null 值一律替换，audit 只认可整个值恰为 `[REDACTED]`；字符串中夹带该 marker
+不会让 Bearer、credential assignment 或其余内容跳过扫描。
+
 ## 已知限制
 
 - 只覆盖 LangGraph 的 StateGraph / checkpointer / interrupt 三块。子图、`Send`、流式、

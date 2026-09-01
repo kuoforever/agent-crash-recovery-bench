@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/kuoforever/agent-crash-recovery-bench/schemas/evidence-manifest-v2.json",
+  "title": "Source artifact evidence manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "generated_at_utc",
+    "evidence_kind",
+    "scope",
+    "artifact_count",
+    "availability_policy",
+    "availability_counts",
+    "credential_handling",
+    "availability_boundary",
+    "artifacts"
+  ],
+  "properties": {
+    "schema_version": { "const": 2 },
+    "generated_at_utc": { "type": "string", "format": "date-time" },
+    "evidence_kind": { "const": "sha256_source_artifact_manifest" },
+    "scope": { "type": "string", "minLength": 1 },
+    "artifact_count": { "type": "integer", "minimum": 1 },
+    "availability_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tracked_paths", "local_only_prefixes"],
+      "properties": {
+        "tracked_paths": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/repoPath" }
+        },
+        "local_only_prefixes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9._/-]+/$"
+          }
+        }
+      }
+    },
+    "availability_counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tracked", "local_only"],
+      "properties": {
+        "tracked": { "type": "integer", "minimum": 0 },
+        "local_only": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "credential_handling": { "type": "string", "minLength": 1 },
+    "availability_boundary": { "type": "string", "minLength": 1 },
+    "artifacts": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/artifact" }
+    }
+  },
+  "$defs": {
+    "repoPath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9._/-]+$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "bytes"],
+      "properties": {
+        "path": { "$ref": "#/$defs/repoPath" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "bytes": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}
